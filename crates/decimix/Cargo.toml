@@ -1,0 +1,35 @@
+[package]
+name = "decimix"
+description = "Fixed-point decimal arithmetic: i128 at 19 decimal places"
+documentation = "https://docs.rs/decimix"
+readme = "../../README.md"
+keywords = ["decimal", "fixed-point", "finance", "trading", "i128"]
+categories = ["mathematics", "finance"]
+include = [
+  "src/**/*.rs",
+]
+
+version.workspace = true
+authors.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+
+[package.metadata.release]
+# Keep the install snippet in the README pinned to the released version.
+pre-release-replacements = [
+  { file = "../../README.md", search = 'decimix = "[^"]+"', replace = 'decimix = "{{version}}"', exactly = 1 },
+]
+
+[dependencies]
+
+[dev-dependencies]
+criterion.workspace = true
+num-bigint.workspace = true
+num-integer.workspace = true
+proptest.workspace = true
+
+[[bench]]
+name = "mul"
+harness = false

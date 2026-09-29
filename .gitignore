@@ -1,0 +1,14 @@
+/target
+Session.vim
+.DS_Store
+.$*
+target/
+
+# Editor backup/swap files
+*~
+*.swp
+*.swo
+\#*\#
+
+.*@neomake*
+*.old
