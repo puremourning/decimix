@@ -155,6 +155,9 @@
 //! `dec!(1.5) * 2`.)
 #![no_std]
 #![warn(missing_docs)]
+// One `unsafe` block, in `AsciiBuf::as_str`, allowed there explicitly; any
+// other has to be allowed just as deliberately.
+#![deny(unsafe_code)]
 
 // Unit tests use std (proptest, formatting); the library itself does not.
 #[cfg(test)]

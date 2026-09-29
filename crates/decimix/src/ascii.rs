@@ -773,9 +773,24 @@ impl AsciiBuf {
 
   /// The text as a string slice.
   #[must_use]
+  #[inline]
+  #[allow(unsafe_code)] // The crate's only `unsafe`; see the SAFETY comment.
   pub fn as_str(&self) -> &str {
-    // Only ASCII digits, '-' and '.' are ever written.
-    core::str::from_utf8(self.as_bytes()).expect("ASCII")
+    let bytes = self.as_bytes();
+    // Checked in debug builds, tests, Miri and fuzzing; skipped in release,
+    // where it would cost about a quarter of the whole `to_ascii` call.
+    debug_assert!(bytes.is_ascii(), "AsciiBuf holds non-ASCII bytes");
+    // SAFETY: every byte in `bytes` is ASCII, and ASCII is valid UTF-8. The
+    // buffer is private and filled only by `shortest`, which writes just
+    // four kinds of byte: a literal '-' or '.'; digit pairs from
+    // `DIGIT_PAIRS` ("00".."99"); the leading digit of a 20-digit whole part,
+    // `b'0' + int / 10^19`, which is 1 to 3 because the whole part is below
+    // 3.5 × 10^19; and `digits8(v) + ZEROS`, whose bytes are
+    // '0'..='9' because every caller passes `v < 10^8` (`write_u64` checks
+    // `v < 100_000_000` or takes `v % 100_000_000`, and `write_frac19` splits
+    // a value below 10^19 into 3 + 8 + 8 digits). `len` never exceeds what
+    // was written.
+    unsafe { core::str::from_utf8_unchecked(bytes) }
   }
 
   /// The text as ASCII bytes.
