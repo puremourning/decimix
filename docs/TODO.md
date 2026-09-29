@@ -5,9 +5,8 @@ ticked; the git log has the history.
 
 ## Now / next
 
-- [ ] **Compact decimal columns**: review the proposal in
-  [`compact-columns.md`](compact-columns.md), settle its open questions,
-  then implement.
+- [ ] **Compact decimal vectors** (`DecVec`/`UDecVec`): second review round
+  of [`compact-columns.md`](compact-columns.md), then implement.
 - [ ] **Check CI** on the `dec19-core` branch: all-features matrix, the
   `no-features` and `float-lint` jobs, Miri timing, and the first
   coverage-guided fuzz runs (`Fuzz` workflow, runs on `main` or on demand).
