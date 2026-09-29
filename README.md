@@ -10,7 +10,7 @@ misuse.
 
 `Dec19` is a signed number with exactly **19 decimal places** (not SQL
 `DECIMAL(19)`, which means 19 digits in total), stored as an `i128`: a range
-of about ±1.7 × 10¹⁹ with 38 significant digits. `UDec19` is the unsigned
+of about ±1.7 × 10¹⁹ with up to 39 significant digits. `UDec19` is the unsigned
 version. There is one representation per value, so comparing and hashing are
 plain integer operations, and adding costs the same as for an `i128`.
 

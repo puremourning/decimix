@@ -19,7 +19,8 @@ multiply path, `dec19.rs`, accompanies this brief.
 
 ### Representation
 - **`Dec19`: an `i128` mantissa at a fixed scale of 19** (value = mantissa × 10⁻¹⁹).
-  Range ±1.7×10¹⁹ whole units, resolution 10⁻¹⁹, 38 significant digits.
+  Range ±1.7×10¹⁹ whole units, resolution 10⁻¹⁹: all 38-digit values below 10¹⁹,
+  and 39 digits at the top of the range (i128::MAX has 39 digits).
 - Crate name **`decimix`**, main type **`decimix::Dec19`**. If other decimal types are
   added later (e.g. `Dec9`, `Dec38`), they live under the same crate.
 - Messages carry `Dec19` as i128 (e.g. two u64 halves in Cap'n Proto). No per-value

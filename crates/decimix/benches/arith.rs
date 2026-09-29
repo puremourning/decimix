@@ -5,7 +5,7 @@
 use std::hint::black_box;
 
 use criterion::{Criterion, criterion_group, criterion_main};
-use decimix::{ProductSum, Round, dec, udec};
+use decimix::{Dec19, ProductSum, Round, dec, udec};
 
 fn bench_arith(c: &mut Criterion) {
   let px = dec!(113.725);
@@ -48,6 +48,49 @@ fn bench_arith(c: &mut Criterion) {
   });
   g.bench_function("div_int", |b| {
     b.iter(|| black_box(px).div_int(black_box(250), black_box(mode)))
+  });
+  // A column of prices, some negative, snapped and converted: the costs the
+  // fpdec comparison flagged.
+  let prices: Vec<Dec19> = (0..4096)
+    .map(|i: i64| {
+      Dec19::from_raw((i * 7919 - 9_000_000) as i128 * 1_000_000_000_000_003)
+    })
+    .collect();
+  let tick = dec!(0.005);
+  g.bench_function("column_round_to_floor", |b| {
+    b.iter(|| {
+      black_box(&prices)
+        .iter()
+        .map(|p| p.round_to(black_box(tick), Round::Floor))
+        .fold(Dec19::ZERO, |a, x| a.saturating_add(x))
+    })
+  });
+  g.bench_function("column_div_euclid_snap", |b| {
+    b.iter(|| {
+      black_box(&prices)
+        .iter()
+        .map(|p| {
+          let tick = black_box(tick);
+          tick * p.div_euclid(tick) as i64
+        })
+        .fold(Dec19::ZERO, |a, x| a.saturating_add(x))
+    })
+  });
+  g.bench_function("column_to_scaled_4", |b| {
+    b.iter(|| {
+      black_box(&prices)
+        .iter()
+        .map(|p| p.to_scaled(4, Round::HalfEven).unwrap_or(0))
+        .fold(0i64, i64::wrapping_add)
+    })
+  });
+  g.bench_function("column_to_int", |b| {
+    b.iter(|| {
+      black_box(&prices)
+        .iter()
+        .map(|p| p.to_int(Round::HalfEven))
+        .fold(0i128, i128::wrapping_add)
+    })
   });
   g.bench_function("round_to_tick", |b| {
     let tick = dec!(0.005);

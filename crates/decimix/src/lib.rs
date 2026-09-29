@@ -16,9 +16,14 @@
 //! - There are 19 digits **after the decimal point**, always. This is *not*
 //!   SQL `DECIMAL(19)`, which means 19 digits in total.
 //! - The range is about ±1.7 × 10¹⁹ whole units (0 to 3.4 × 10¹⁹ for
-//!   [`UDec19`]), with 38 significant digits. That is more than any real
-//!   price or tick needs, so nobody ever has to choose a scale or a
-//!   multiplier.
+//!   [`UDec19`]): every number below 10¹⁹ with up to 19 decimal places
+//!   fits (38 digits), and the largest values have 39. That is more than any
+//!   real price or tick needs, so nobody ever has to choose a scale or a
+//!   multiplier. Other systems reading these values need 39 digits of
+//!   precision: arbitrary-precision types (Java `BigDecimal`, Go `math/big`,
+//!   Postgres `NUMERIC`) are fine, but 38-digit column types (Arrow/Parquet
+//!   `Decimal128`) can't hold values of 10¹⁹ or more, and Python's `Decimal`
+//!   rounds arithmetic to 28 digits unless its context is widened.
 //! - Every value has exactly one representation (`1.0` and `1.00` are the
 //!   same thing), so `==`, `<` and hashing are plain integer operations.
 //! - Adding, subtracting and comparing cost the same as for `i128`.

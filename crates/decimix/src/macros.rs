@@ -107,7 +107,8 @@ macro_rules! udec {
 /// - `round_to`, `round_dp`, `div_euclid`, `rem_euclid`, `div_int`, and
 ///   `mul_dec` (multiply by a plain base-type value, e.g. a ratio);
 /// - `Display`, `Debug` (`FeeRate(0.0002)`), `FromStr`, `from_ascii`,
-///   `write_ascii` and `to_ascii`.
+///   `write_ascii` and `to_ascii`;
+/// - order-preserving `to_key_bytes`/`from_key_bytes`.
 ///
 /// It deliberately has **no** `f64` methods: use `.get().to_f64_lossy()`,
 /// so the lint rules only need to name the base types.
@@ -324,6 +325,19 @@ macro_rules! __newtype_common {
         mode: $crate::Round,
       ) -> ::core::option::Option<Self> {
         self.0.checked_mul(factor, mode).map(Self)
+      }
+
+      /// Order-preserving key bytes: see the base type's `to_key_bytes`.
+      #[must_use]
+      #[inline]
+      pub const fn to_key_bytes(self) -> [u8; 16] {
+        self.0.to_key_bytes()
+      }
+
+      /// Reads a value from [`to_key_bytes`](Self::to_key_bytes).
+      #[inline]
+      pub const fn from_key_bytes(bytes: [u8; 16]) -> Self {
+        Self(<$base>::from_key_bytes(bytes))
       }
 
       /// Reads ASCII decimal text exactly. See the base type's

@@ -42,6 +42,51 @@ pub(crate) fn div_round(
   q + crate::round::round_away(mode, negative, q & 1 == 1, r, divisor) as u128
 }
 
+/// Divides a magnitude by 10ᵏ (k from 0 to 19), rounding with `mode`, without
+/// a 128-bit division.
+///
+/// Returns the rounded quotient, the part of the magnitude dropped when
+/// truncating (so `magnitude − dropped` is the multiple of 10ᵏ just below
+/// it), and whether rounding went up from there. `negative` is the sign of
+/// the final result.
+///
+/// How: split the magnitude into its whole part and its 19-digit fraction
+/// with the multiply kernel's divide-by-10¹⁹, which uses a precomputed
+/// reciprocal instead of a division instruction. Dividing by 10ᵏ then only
+/// needs the fraction divided by 10ᵏ, a 64-bit division: e.g. for k = 17
+/// (2 decimal places), 113.725 is whole part 113 and fraction
+/// 7250000000000000000, which is 72 hundredths plus 50000000000000000 left
+/// over.
+#[inline]
+pub(crate) fn div_pow10_round(
+  magnitude: u128,
+  k: u32,
+  negative: bool,
+  mode: crate::Round,
+) -> (u128, u128, bool) {
+  if k == 0 {
+    return (magnitude, 0, false);
+  }
+  let (int, frac) = crate::ascii::split(magnitude);
+  let (q, dropped, unit) = if k == 19 {
+    (int, frac, crate::consts::ONE_RAW as u64)
+  } else {
+    let unit = crate::consts::POW10[k as usize] as u64;
+    // The whole part times 10^(19-k) is at most the quotient, so it fits.
+    let q = int * crate::consts::POW10[19 - k as usize] + (frac / unit) as u128;
+    (q, frac % unit, unit)
+  };
+  let away = crate::round::round_away(
+    mode,
+    negative,
+    q & 1 == 1,
+    dropped as u128,
+    unit as u128,
+  );
+  // q + 1 can't overflow: q is at most a tenth of the u128 range.
+  (q + away as u128, dropped as u128, away)
+}
+
 macro_rules! impl_fixed19 {
   (
     type = $T:ident,
@@ -125,6 +170,33 @@ macro_rules! impl_fixed19 {
         Self(<$raw>::from_be_bytes(bytes))
       }
 
+      /// The value as 16 bytes whose byte order is the value order: comparing
+      /// two keys byte by byte (`memcmp`, or `<` on the arrays) gives the
+      /// same answer as comparing the values. For keys in sorted storage.
+      ///
+      /// Big-endian, so the most significant byte comes first. For the
+      /// signed type the top (sign) bit is also flipped: in two's complement
+      /// negative numbers have it set, which would otherwise sort them after
+      /// the positive ones. For the unsigned type there is nothing to flip.
+      /// This is the usual order-preserving encoding for fixed-size integers.
+      ///
+      #[doc = concat!("```\nuse decimix::{", stringify!($T), ", ", $mac, "};\n")]
+      #[doc = concat!("let (a, b) = (", $mac, "!(1.5), ", $mac, "!(2));")]
+      #[doc = "assert!(a < b && a.to_key_bytes() < b.to_key_bytes());"]
+      #[doc = concat!("assert_eq!(", stringify!($T), "::from_key_bytes(a.to_key_bytes()), a);")]
+      #[doc = "```"]
+      #[must_use]
+      #[inline]
+      pub const fn to_key_bytes(self) -> [u8; 16] {
+        ((self.0 as u128) ^ Self::KEY_FLIP).to_be_bytes()
+      }
+
+      /// Reads a value from [`to_key_bytes`](Self::to_key_bytes).
+      #[inline]
+      pub const fn from_key_bytes(bytes: [u8; 16]) -> Self {
+        Self((u128::from_be_bytes(bytes) ^ Self::KEY_FLIP) as $raw)
+      }
+
       /// Builds a value from an integer with an implied number of decimal
       /// places, as used by binary exchange protocols and the old
       /// `(mantissa, scale)` pairs.
@@ -150,6 +222,7 @@ macro_rules! impl_fixed19 {
       ///
       /// `113.725` at 4 places is `1_137_250`. Fails if the result does not
       /// fit the integer type.
+      #[inline]
       pub fn to_scaled(
         self,
         decimal_places: u32,
@@ -157,12 +230,13 @@ macro_rules! impl_fixed19 {
       ) -> Result<$int, $crate::OutOfRange> {
         let (negative, magnitude) = self.to_parts();
         let scaled = if decimal_places <= 19 {
-          $crate::common::div_round(
+          $crate::common::div_pow10_round(
             magnitude,
-            $crate::consts::POW10[19 - decimal_places as usize],
+            19 - decimal_places,
             negative,
             mode,
           )
+          .0
         } else if magnitude == 0 {
           // Zero is zero at any number of places (and 10^k for large k
           // doesn't fit in a u128).
@@ -340,10 +414,17 @@ macro_rules! impl_fixed19 {
         assert!(step.0 > 0, "round_to: step must be positive");
         let (negative, magnitude) = self.to_parts();
         let step = step.0 as u128;
-        // Count whole steps, rounding the count; then multiply back.
-        let steps = $crate::common::div_round(magnitude, step, negative, mode);
-        steps
-          .checked_mul(step)
+        // The multiple of `step` just below the magnitude is the magnitude
+        // minus the remainder; the one above is that plus `step`. So no
+        // multiplication is needed, only the one division (whose quotient's
+        // parity settles half-even ties).
+        let q = magnitude / step;
+        let r = magnitude % step;
+        let below = magnitude - r;
+        let away =
+          $crate::round::round_away(mode, negative, q & 1 == 1, r, step);
+        let rounded = if away { below.checked_add(step) } else { Some(below) };
+        rounded
           .and_then(|m| Self::from_parts(negative, m))
           .expect(concat!(stringify!($T), " overflow in round_to"))
       }
@@ -358,14 +439,26 @@ macro_rules! impl_fixed19 {
       /// If the result overflows (only possible when rounding away from zero
       /// right next to [`MAX`](Self::MAX) or [`MIN`](Self::MIN)).
       #[track_caller]
+      #[inline]
       pub fn round_dp(self, places: u32, mode: $crate::Round) -> Self {
         if places >= 19 {
           return self;
         }
-        self.round_to(
-          Self($crate::consts::POW10[19 - places as usize] as $raw),
-          mode,
-        )
+        let (negative, magnitude) = self.to_parts();
+        let k = 19 - places;
+        let (_, dropped, away) =
+          $crate::common::div_pow10_round(magnitude, k, negative, mode);
+        // The multiple of 10^k just below the magnitude, or the one above if
+        // rounding went up: no multiplication or division needed.
+        let below = magnitude - dropped;
+        let rounded = if away {
+          below.checked_add($crate::consts::POW10[k as usize])
+        } else {
+          Some(below)
+        };
+        rounded
+          .and_then(|m| Self::from_parts(negative, m))
+          .expect(concat!(stringify!($T), " overflow in round_dp"))
       }
 
       /// The whole-number value, rounded with `mode`.
@@ -376,12 +469,8 @@ macro_rules! impl_fixed19 {
       #[must_use]
       pub fn to_int(self, mode: $crate::Round) -> $raw {
         let (negative, magnitude) = self.to_parts();
-        let q = $crate::common::div_round(
-          magnitude,
-          $crate::consts::ONE_RAW,
-          negative,
-          mode,
-        );
+        let (q, _, _) =
+          $crate::common::div_pow10_round(magnitude, 19, negative, mode);
         Self::raw_from_parts(negative, q).expect("whole part always fits")
       }
 

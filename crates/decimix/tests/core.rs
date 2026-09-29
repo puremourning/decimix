@@ -79,6 +79,23 @@ fn raw_and_bytes() {
   assert_eq!(UDec19::from_le_bytes(q.to_le_bytes()), q);
 }
 
+/// The key encoding is stored by other systems (sorted storage), so pin
+/// its exact bytes as well as its ordering.
+#[test]
+fn key_bytes_are_fixed() {
+  let mut minus_one = [0xFF; 16];
+  minus_one[0] = 0x7F;
+  let mut zero = [0; 16];
+  zero[0] = 0x80;
+  assert_eq!(Dec19::MIN.to_key_bytes(), [0; 16]);
+  assert_eq!(Dec19::from_raw(-1).to_key_bytes(), minus_one);
+  assert_eq!(Dec19::ZERO.to_key_bytes(), zero);
+  assert_eq!(Dec19::MAX.to_key_bytes(), [0xFF; 16]);
+  assert_eq!(UDec19::ZERO.to_key_bytes(), [0; 16]);
+  assert_eq!(UDec19::MAX.to_key_bytes(), [0xFF; 16]);
+  assert_eq!(dec!(1).to_key_bytes(), (D as u128 | 1 << 127).to_be_bytes());
+}
+
 #[test]
 fn exact_operators() {
   let (a, b) = (dec!(113.725), dec!(0.005));
@@ -357,6 +374,20 @@ proptest! {
         mode
       );
     }
+  }
+
+  #[test]
+  fn key_bytes_sort_like_values(a in value(), b in value()) {
+    let (x, y) = (Dec19::from_raw(a), Dec19::from_raw(b));
+    prop_assert_eq!(x.to_key_bytes().cmp(&y.to_key_bytes()), x.cmp(&y));
+    prop_assert_eq!(Dec19::from_key_bytes(x.to_key_bytes()), x);
+  }
+
+  #[test]
+  fn udec19_key_bytes_sort_like_values(a in uvalue(), b in uvalue()) {
+    let (x, y) = (UDec19::from_raw(a), UDec19::from_raw(b));
+    prop_assert_eq!(x.to_key_bytes().cmp(&y.to_key_bytes()), x.cmp(&y));
+    prop_assert_eq!(UDec19::from_key_bytes(x.to_key_bytes()), x);
   }
 
   #[test]

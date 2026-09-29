@@ -17,7 +17,8 @@ solely on incompatible or API changes. For the full changelog see the git log.
   (`from_ascii`, `write_ascii`, `write_ascii_dp`, `to_ascii`, `FromStr`,
   `Display`).
 - Raw and wire access: `to_raw`/`from_raw`, `to_le_bytes`/`from_le_bytes`,
-  `from_scaled`/`to_scaled`.
+  `from_scaled`/`to_scaled`, and order-preserving
+  `to_key_bytes`/`from_key_bytes` for sorted storage.
 - Explicit float boundary: `to_f64_lossy` and `from_f64_lossy(x, step, Round)`.
 - `bigdecimal` feature: exact `From<Dec19> for BigDecimal`, `to_big`,
   `from_big`, `TryFrom<&BigDecimal>`.

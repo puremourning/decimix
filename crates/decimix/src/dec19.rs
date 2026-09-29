@@ -8,9 +8,10 @@ use crate::{Fixed19, OutOfRange, Round, UDec19};
 ///
 /// Stored as an `i128` count of 10⁻¹⁹ steps: 113.725 is stored as
 /// 1,137,250,000,000,000,000,000. That gives a range of about ±1.7 × 10¹⁹ whole
-/// units (±17,014,118,346,046,923,173.1687303715884105727) with 38 significant
-/// digits, and every value has exactly one representation, so `==`, `<` and
-/// hashing are plain integer operations.
+/// units (±17,014,118,346,046,923,173.1687303715884105727): every number
+/// below 10¹⁹ with up to 19 decimal places (38 digits), and beyond that up to
+/// the limit (39 digits). Every value has exactly one representation, so
+/// `==`, `<` and hashing are plain integer operations.
 ///
 /// Operators exist only where the result is exact: `+`, `-`, unary `-`,
 /// comparisons and `*` by an integer. They panic on overflow, in release
@@ -47,6 +48,9 @@ impl_fixed19! {
 }
 
 impl Dec19 {
+  /// The sign bit, flipped in `to_key_bytes` so negatives sort first.
+  const KEY_FLIP: u128 = 1 << 127;
+
   const LITERAL_RANGE_ERROR: &'static str =
     "dec! literal out of range (about ±1.7e19)";
 

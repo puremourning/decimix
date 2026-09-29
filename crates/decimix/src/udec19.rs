@@ -43,6 +43,9 @@ impl_fixed19! {
 }
 
 impl UDec19 {
+  /// Nothing to flip in `to_key_bytes`: unsigned big-endian already sorts.
+  const KEY_FLIP: u128 = 0;
+
   const LITERAL_RANGE_ERROR: &'static str =
     "udec! literal out of range (0 to about 3.4e19)";
 
