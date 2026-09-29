@@ -466,7 +466,8 @@ macro_rules! impl_fixed19 {
       #[doc(alias = "to_f64", alias = "as_f64", alias = "into_f64")]
       #[must_use]
       pub fn to_f64_lossy(self) -> f64 {
-        todo!("phase 6: to_f64_lossy")
+        let (negative, magnitude) = self.to_parts();
+        $crate::ieee::to_f64(negative, magnitude)
       }
 
       /// **Not for arithmetic.** Converts a double from a system or API that
@@ -496,8 +497,10 @@ macro_rules! impl_fixed19 {
         step: Self,
         mode: $crate::Round,
       ) -> Result<Self, $crate::FromF64Error> {
-        let _ = (x, step, mode);
-        todo!("phase 6: from_f64_lossy")
+        assert!(step.0 > 0, "from_f64_lossy: step must be positive");
+        let (negative, magnitude) =
+          $crate::ieee::from_f64(x, step.0 as u128, mode)?;
+        Self::from_parts(negative, magnitude).ok_or($crate::FromF64Error::OutOfRange)
       }
 
       // ---- Macro support -------------------------------------------------
@@ -520,7 +523,9 @@ macro_rules! impl_fixed19 {
       ) -> Result<Self, $crate::ParseError> {
         match Self::from_parts(p.negative, p.magnitude) {
           None => Err($crate::ParseError::OutOfRange),
-          Some(_) if p.inexact => Err($crate::ParseError::TooPrecise),
+          Some(_) if !matches!(p.dropped, $crate::ascii::Dropped::Nothing) => {
+            Err($crate::ParseError::TooPrecise)
+          }
           Some(v) => Ok(v),
         }
       }

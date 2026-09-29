@@ -167,6 +167,7 @@ mod common;
 mod consts;
 mod dec19;
 mod error;
+mod ieee;
 mod macros;
 mod round;
 mod udec19;

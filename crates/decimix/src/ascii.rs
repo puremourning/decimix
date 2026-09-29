@@ -22,33 +22,64 @@ use core::ops::Deref;
 use crate::consts::{ONE_RAW, POW10};
 use crate::error::{BufferTooSmall, ParseError};
 use crate::kernel::mul::{D, div2by1};
-use crate::round::{Round, round_away};
+use crate::round::{Round, decide, round_away};
 
 // ---- Reading ---------------------------------------------------------------
 
-/// What the parsers return: a sign and a magnitude in 10⁻¹⁹ steps, and
-/// whether non-zero digits beyond the 19th decimal place were dropped (only
-/// possible when no rounding mode was given).
+/// What the parsers return: a sign and a magnitude in 10⁻¹⁹ steps, and what
+/// was dropped beyond the 19th decimal place (only possible when no rounding
+/// mode was given).
 ///
-/// The caller checks its own type's range first, then `inexact`, so that an
-/// out-of-range number is reported as such even if it is also too precise.
+/// The caller checks its own type's range first, then whether anything was
+/// dropped, so that an out-of-range number is reported as such even if it is
+/// also too precise.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub(crate) struct Parsed {
   pub(crate) negative:  bool,
   pub(crate) magnitude: u128,
-  pub(crate) inexact:   bool,
+  pub(crate) dropped:   Dropped,
+}
+
+/// Digits dropped beyond the 19th decimal place, as a fraction of one 10⁻¹⁹
+/// step, compared with one half. This is exactly what a later rounding step
+/// needs to round the *original* number, not an already-rounded one (see
+/// `ieee::round_to_step`).
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub(crate) enum Dropped {
+  /// Nothing, or only zeros.
+  Nothing,
+  /// Something, but less than half a step ("4999…").
+  BelowHalf,
+  /// Exactly half a step ("5", "50000").
+  Half,
+  /// More than half a step ("5001", "6").
+  AboveHalf,
+}
+
+impl Dropped {
+  /// From the first dropped digit, and whether any digit after it is
+  /// non-zero.
+  const fn new(first: u8, sticky: bool) -> Self {
+    match (first, sticky) {
+      (0, false) => Dropped::Nothing,
+      (0..=4, _) => Dropped::BelowHalf,
+      (5, false) => Dropped::Half,
+      _ => Dropped::AboveHalf,
+    }
+  }
 }
 
 /// Reads `bytes[start..end]` as `[+-]digits[.digits]`.
 ///
 /// With `round` set to `None`, digits past the 19th decimal place are dropped
-/// and reported through [`Parsed::inexact`]; otherwise they are rounded with
-/// that mode.
+/// and described by [`Parsed::dropped`]; otherwise they are rounded with that
+/// mode.
 ///
 /// Fails with [`ParseError::Invalid`] if the text is not a number at all,
 /// and with [`ParseError::OutOfRange`] if the magnitude doesn't even fit in a
-/// u128. The caller then checks its own range, and only then `inexact`, so
-/// the order is always Invalid, OutOfRange, TooPrecise.
+/// u128. The caller then checks its own range, and only then whether
+/// anything was dropped, so the order is always Invalid, OutOfRange,
+/// TooPrecise.
 pub(crate) const fn parse(
   b: &[u8],
   start: usize,
@@ -129,7 +160,7 @@ pub(crate) const fn parse(
     return Ok(Parsed {
       negative,
       magnitude,
-      inexact: false,
+      dropped: Dropped::Nothing,
     });
   }
   let first_extra = b[frac_start + 19] - b'0';
@@ -142,16 +173,13 @@ pub(crate) const fn parse(
   round_extra(negative, magnitude, first_extra, sticky, round)
 }
 
-/// Applies digits beyond the 19th decimal place to a magnitude: reports them
-/// as inexact without a rounding mode (if any are non-zero), otherwise
-/// rounds.
+/// Applies digits beyond the 19th decimal place to a magnitude: describes
+/// them without a rounding mode, otherwise rounds.
 ///
 /// The dropped digits are a fraction of one 10⁻¹⁹ step. To round we only
 /// need to compare that fraction with one half, which the first dropped digit
-/// and a "sticky" flag (is anything after it non-zero?) tell us exactly.
-/// Expressed as r out of d = 20: r = 2 × first digit, plus 1 if anything
-/// non-zero follows. So "5" is exactly 10/20 (a tie), "50001" is 11/20 (above
-/// half) and "4999" is 9/20 (below).
+/// and a "sticky" flag (is anything after it non-zero?) tell us exactly: "5"
+/// is exactly half (a tie), "50001" is above half and "4999" below.
 const fn round_extra(
   negative: bool,
   magnitude: u128,
@@ -159,16 +187,23 @@ const fn round_extra(
   sticky: bool,
   round: Option<Round>,
 ) -> Result<Parsed, ParseError> {
-  let dropped = first_extra != 0 || sticky;
+  let dropped = Dropped::new(first_extra, sticky);
   let Some(mode) = round else {
     return Ok(Parsed {
       negative,
       magnitude,
-      inexact: dropped,
+      dropped,
     });
   };
-  let r = first_extra as u128 * 2 + sticky as u128;
-  let magnitude = if round_away(mode, negative, magnitude & 1 == 1, r, 20) {
+  let away = decide(
+    mode,
+    negative,
+    magnitude & 1 == 1,
+    matches!(dropped, Dropped::AboveHalf),
+    matches!(dropped, Dropped::Half),
+    !matches!(dropped, Dropped::Nothing),
+  );
+  let magnitude = if away {
     match magnitude.checked_add(1) {
       Some(v) => v,
       None => return Err(ParseError::OutOfRange),
@@ -179,7 +214,7 @@ const fn round_extra(
   Ok(Parsed {
     negative,
     magnitude,
-    inexact: false,
+    dropped: Dropped::Nothing,
   })
 }
 
@@ -480,7 +515,7 @@ const POW10_U64: [u64; 20] = {
 /// from it by hand; that contributes 2⁶⁴ to the whole part. Then the
 /// kernel divides the rest.
 #[inline(always)]
-fn split(m: u128) -> (u128, u64) {
+pub(crate) fn split(m: u128) -> (u128, u64) {
   let hi = (m >> 64) as u64;
   let lo = m as u64;
   let (top, hi) = if hi >= D { (1u128, hi - D) } else { (0, hi) };

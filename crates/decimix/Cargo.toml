@@ -53,3 +53,7 @@ harness = false
 [[bench]]
 name = "arith"
 harness = false
+
+[[bench]]
+name = "ieee"
+harness = false
