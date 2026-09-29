@@ -200,5 +200,6 @@ mod sealed {
 /// benchmarks can reach it.
 #[doc(hidden)]
 pub mod kernel {
+  pub mod div;
   pub mod mul;
 }

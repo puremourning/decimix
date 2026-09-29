@@ -116,12 +116,26 @@ pub(crate) fn mul_magnitude(
   negative: bool,
   mode: Round,
 ) -> Option<u128> {
-  let [w0, w1, w2, w3] = mul_128x128(x, y);
+  div_d_round(mul_128x128(x, y), negative, mode)
+}
 
-  // The quotient fits in 128 bits exactly when the product is below
+/// Divides a 256-bit magnitude (four 64-bit words, least significant first)
+/// by 10¹⁹, rounding with `mode`. `None` if the result doesn't fit in 128
+/// bits. `negative` is the sign the final result will have.
+///
+/// Used to bring a product at 38 decimal places back to 19, for a single
+/// multiplication and for a whole sum of products (`ProductSum`).
+#[inline(always)]
+pub(crate) fn div_d_round(
+  [w0, w1, w2, w3]: [u64; 4],
+  negative: bool,
+  mode: Round,
+) -> Option<u128> {
+  // The quotient fits in 128 bits exactly when the dividend is below
   // 10¹⁹ × 2¹²⁸, i.e. when its top two words, read as one number, are below
   // 10¹⁹. Since 10¹⁹ fits in one word, that means: word 3 is zero and word 2
-  // is below 10¹⁹. This also meets div2by1's requirement for the first step.
+  // is below 10¹⁹. This also meets div2by1's requirement for the first step,
+  // so it has to be checked before dividing.
   if w3 != 0 || w2 >= D {
     return None;
   }
@@ -151,6 +165,30 @@ pub(crate) fn mul_magnitude(
   // Rounding up can carry past 128 bits, but only when q is all ones; see
   // the `rounding_up_past_128_bits_is_overflow` test.
   q.checked_add(away as u128)
+}
+
+/// `x × y / 10¹⁹` for magnitudes, rounded with `mode`, taking the shortcut
+/// when either operand is a whole number. `None` if the result doesn't fit in 128 bits.
+///
+/// The entry point for `Dec19::mul` and `UDec19::mul`: they split their
+/// operands into sign and magnitude, call this, and put the sign back.
+#[inline(always)]
+pub(crate) fn mul_parts(
+  x: u128,
+  y: u128,
+  negative: bool,
+  mode: Round,
+) -> Option<u128> {
+  // Price × whole quantity (either way round): exact, so the rounding mode
+  // doesn't matter. Checking the second operand costs ~0.1 ns when neither
+  // is whole, and saves ~7 ns when the whole number comes first.
+  if let Some(n) = whole(y) {
+    return mul_whole(x, n);
+  }
+  if let Some(n) = whole(x) {
+    return mul_whole(y, n);
+  }
+  mul_magnitude(x, y, negative, mode)
 }
 
 /// Gives a sign to a magnitude as an `i128`, or `None` if it doesn't fit.
@@ -222,20 +260,21 @@ const INV5: u128 = inv_mod_2_128(P5);
 /// bits.
 const LIM5: u128 = u128::MAX / P5;
 
-/// If the stored value `b` is a whole number (e.g. 250.0), returns that
-/// number (250), without dividing. Otherwise `None`.
+/// If the stored value `b` is a whole number below 2⁶⁴ (e.g. 250.0),
+/// returns that number (250), without dividing. Otherwise `None`.
 ///
 /// A stored value is a whole number exactly when it's divisible by 10¹⁹ =
 /// 2¹⁹ × 5¹⁹, i.e. by both 2¹⁹ and 5¹⁹:
 /// - divisible by 2¹⁹ means its low 19 bits are zero: one AND;
 /// - for 5¹⁹, multiply by `INV5`, which undoes a multiplication by 5¹⁹. If
 ///   the number really is 5¹⁹ × k, the result is exactly k, which is at most
-///   `LIM5`. If it isn't a multiple, the result is a number above
-///   `LIM5`: multiplying by INV5 just reshuffles all 128-bit values
-///   one-to-one, and the small results are all taken by the multiples.
+///   `LIM5`. If it isn't a multiple, the result is a number above `LIM5`:
+///   multiplying by INV5 just reshuffles all 128-bit values one-to-one, and
+///   the small results are all taken by the multiples.
 ///
-/// The number returned always fits in 64 bits: a stored value is below
-/// 2¹²⁸, so its whole part is below 2¹²⁸ / 10¹⁹ < 2⁶⁴.
+/// A `Dec19`'s whole part is always below 2⁶⁴ (it's at most about
+/// 1.7 × 10¹⁹), but a `UDec19`'s can reach about 3.4 × 10¹⁹. Those rare huge
+/// whole numbers return `None` and take the general path.
 #[inline(always)]
 pub(crate) fn whole(b: u128) -> Option<u64> {
   if b & ((1 << 19) - 1) != 0 {
@@ -245,7 +284,7 @@ pub(crate) fn whole(b: u128) -> Option<u64> {
   if k > LIM5 {
     return None;
   }
-  Some(k as u64)
+  u64::try_from(k).ok()
 }
 
 /// `x × n` for a magnitude and a whole number, or `None` if it doesn't fit
@@ -268,11 +307,7 @@ pub(crate) fn mul_whole(x: u128, n: u64) -> Option<u128> {
 #[inline(always)]
 pub fn mul19_fast_round(a: i128, b: i128, mode: Round) -> Option<i128> {
   let negative = (a < 0) ^ (b < 0);
-  if let Some(n) = whole(b.unsigned_abs()) {
-    // Price × whole quantity: exact, so the rounding mode doesn't matter.
-    return to_signed(negative, mul_whole(a.unsigned_abs(), n)?);
-  }
-  let m = mul_magnitude(a.unsigned_abs(), b.unsigned_abs(), negative, mode)?;
+  let m = mul_parts(a.unsigned_abs(), b.unsigned_abs(), negative, mode)?;
   to_signed(negative, m)
 }
 

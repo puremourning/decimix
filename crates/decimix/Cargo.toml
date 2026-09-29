@@ -29,6 +29,7 @@ bigdecimal = ["dep:bigdecimal"]
 
 [dependencies]
 bigdecimal = { workspace = true, optional = true }
+ethnum.workspace = true
 
 [dev-dependencies]
 criterion.workspace = true
@@ -47,4 +48,8 @@ harness = false
 
 [[bench]]
 name = "ascii"
+harness = false
+
+[[bench]]
+name = "arith"
 harness = false

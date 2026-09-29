@@ -21,7 +21,10 @@ solely on incompatible or API changes. For the full changelog see the git log.
 - Explicit float boundary: `to_f64_lossy` and `from_f64_lossy(x, step, Round)`.
 - `bigdecimal` feature: exact `From<Dec19> for BigDecimal`, `to_big`,
   `from_big`, `TryFrom<&BigDecimal>`.
-- `ProductSum` for exact sums of products; `newtype!` for domain types.
+- Rounding multiplication and division (`mul`, `div` and their `checked_`
+  and `saturating_` forms); `Dec19` accepts a `UDec19` operand.
+- `ProductSum` for exact sums of products (`add`, `checked_add`, `finish`,
+  `div`); `newtype!` for domain types.
 - `decimix-finance` crate (unpublished): `Price`, `Qty` (unsigned quantity),
   `DeltaQty` (signed quantity), `Amt` (price × quantity), `Percentage`, and
   the `Quantity` trait over both quantity forms.

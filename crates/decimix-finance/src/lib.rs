@@ -49,7 +49,7 @@
 //! value (the consideration), negative when the price or quantity is. Like every decimal product,
 //! it names its rounding.
 //!
-//! ```no_run
+//! ```
 //! use decimix::{Round, dec, udec};
 //! use decimix_finance::{DeltaQty, Amt, Price, Qty, Percentage};
 //!
@@ -228,7 +228,7 @@ impl Price {
   /// `None` if there are no fills, the total quantity is zero, or a total
   /// overflows.
   ///
-  /// ```no_run
+  /// ```
   /// use decimix::{Round, dec, udec};
   /// use decimix_finance::{Price, Qty};
   ///

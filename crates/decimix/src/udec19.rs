@@ -104,6 +104,7 @@ impl UDec19 {
   ///
   /// On overflow. See [`checked_mul`](Self::checked_mul).
   #[track_caller]
+  #[inline]
   pub fn mul(self, rhs: Self, mode: Round) -> Self {
     self
       .checked_mul(rhs, mode)
@@ -113,13 +114,14 @@ impl UDec19 {
   /// Multiplication, rounded to 19 places with `mode`, or `None` on
   /// overflow.
   #[must_use]
+  #[inline]
   pub fn checked_mul(self, rhs: Self, mode: Round) -> Option<Self> {
-    let _ = (rhs, mode);
-    todo!("phase 5: UDec19 mul")
+    crate::kernel::mul::mul_parts(self.0, rhs.0, false, mode).map(Self)
   }
 
   /// Multiplication, rounded to 19 places with `mode`, clamped to
   /// [`MAX`](Self::MAX) instead of overflowing.
+  #[inline]
   pub fn saturating_mul(self, rhs: Self, mode: Round) -> Self {
     self.checked_mul(rhs, mode).unwrap_or(Self::MAX)
   }
@@ -130,6 +132,7 @@ impl UDec19 {
   ///
   /// If `rhs` is zero or the result overflows.
   #[track_caller]
+  #[inline]
   pub fn div(self, rhs: Self, mode: Round) -> Self {
     self
       .checked_div(rhs, mode)
@@ -139,9 +142,9 @@ impl UDec19 {
   /// Division, rounded to 19 places with `mode`, or `None` if `rhs` is zero
   /// or the result overflows.
   #[must_use]
+  #[inline]
   pub fn checked_div(self, rhs: Self, mode: Round) -> Option<Self> {
-    let _ = (rhs, mode);
-    todo!("phase 5: UDec19 div")
+    crate::kernel::div::div_parts(self.0, rhs.0, false, mode).map(Self)
   }
 }
 

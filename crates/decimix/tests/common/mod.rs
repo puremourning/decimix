@@ -149,6 +149,9 @@ pub fn uvalue() -> impl Strategy<Value = u128> {
   let pow10 = (0u32..=38, -1i128..=1)
     .prop_map(|(e, d)| (10u128.pow(e) as i128 + d).max(0) as u128);
   let whole = any::<u64>().prop_map(|k| k as u128 * D as u128);
+  // Whole numbers above 2^64: only UDec19 has them.
+  let huge_whole = (u64::MAX as u128 + 1..=34_028_236_692_093_846_346)
+    .prop_map(|k| k * D as u128);
   let limits = prop_oneof![
     Just(0u128),
     Just(1),
@@ -163,6 +166,7 @@ pub fn uvalue() -> impl Strategy<Value = u128> {
     2 => 0u128..10u128.pow(29),
     2 => pow10,
     2 => whole,
+    1 => huge_whole,
     1 => limits,
   ]
 }

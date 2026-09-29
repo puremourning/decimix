@@ -149,7 +149,7 @@ impl Dec19 {
   ///
   /// `rhs` may be a [`Dec19`] or a [`UDec19`].
   ///
-  /// ```no_run
+  /// ```
   /// use decimix::{Round, dec};
   ///
   /// let notional = dec!(113.725).mul(dec!(1234.5678901), Round::HalfEven);
@@ -160,6 +160,7 @@ impl Dec19 {
   ///
   /// On overflow. See [`checked_mul`](Self::checked_mul).
   #[track_caller]
+  #[inline]
   pub fn mul<R: Fixed19>(self, rhs: R, mode: Round) -> Self {
     self
       .checked_mul(rhs, mode)
@@ -169,16 +170,27 @@ impl Dec19 {
   /// Multiplication, rounded to 19 places with `mode`, or `None` on
   /// overflow.
   #[must_use]
+  #[inline]
   pub fn checked_mul<R: Fixed19>(self, rhs: R, mode: Round) -> Option<Self> {
-    let _ = (rhs, mode);
-    todo!("phase 4: mul")
+    // Work on sizes and put the sign back at the end: negative exactly when
+    // one input is negative.
+    let (neg_a, a) = self.to_parts();
+    let (neg_b, b) = rhs.__to_parts();
+    let negative = neg_a != neg_b;
+    let m = crate::kernel::mul::mul_parts(a, b, negative, mode)?;
+    Self::from_parts(negative, m)
   }
 
   /// Multiplication, rounded to 19 places with `mode`, clamped to
   /// [`MIN`](Self::MIN)..=[`MAX`](Self::MAX) instead of overflowing.
+  #[inline]
   pub fn saturating_mul<R: Fixed19>(self, rhs: R, mode: Round) -> Self {
-    let _ = (rhs, mode);
-    todo!("phase 4: saturating_mul")
+    match self.checked_mul(rhs, mode) {
+      Some(v) => v,
+      // Overflow: clamp toward the sign the product would have had.
+      None if self.is_negative() != rhs.__to_parts().0 => Self::MIN,
+      None => Self::MAX,
+    }
   }
 
   /// Division, rounded to 19 places with `mode`.
@@ -191,6 +203,7 @@ impl Dec19 {
   ///
   /// If `rhs` is zero or the result overflows.
   #[track_caller]
+  #[inline]
   pub fn div<R: Fixed19>(self, rhs: R, mode: Round) -> Self {
     self
       .checked_div(rhs, mode)
@@ -200,9 +213,13 @@ impl Dec19 {
   /// Division, rounded to 19 places with `mode`, or `None` if `rhs` is zero
   /// or the result overflows.
   #[must_use]
+  #[inline]
   pub fn checked_div<R: Fixed19>(self, rhs: R, mode: Round) -> Option<Self> {
-    let _ = (rhs, mode);
-    todo!("phase 4: div")
+    let (neg_a, a) = self.to_parts();
+    let (neg_b, b) = rhs.__to_parts();
+    let negative = neg_a != neg_b;
+    let m = crate::kernel::div::div_parts(a, b, negative, mode)?;
+    Self::from_parts(negative, m)
   }
 }
 
