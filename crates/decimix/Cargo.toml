@@ -34,6 +34,8 @@ ethnum.workspace = true
 [dev-dependencies]
 criterion.workspace = true
 itoa.workspace = true
+fpdec.workspace = true
+primitive_fixed_point_decimal.workspace = true
 num-bigint.workspace = true
 num-integer.workspace = true
 proptest.workspace = true
@@ -56,4 +58,8 @@ harness = false
 
 [[bench]]
 name = "ieee"
+harness = false
+
+[[bench]]
+name = "compare"
 harness = false

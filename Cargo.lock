@@ -192,9 +192,11 @@ dependencies = [
  "bigdecimal",
  "criterion",
  "ethnum",
+ "fpdec",
  "itoa",
  "num-bigint",
  "num-integer",
+ "primitive_fixed_point_decimal",
  "proptest",
 ]
 
@@ -204,6 +206,12 @@ version = "0.1.0"
 dependencies = [
  "decimix",
 ]
+
+[[package]]
+name = "div-pow10"
+version = "0.1.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "5767cf2c9ca4f6f3f6564d01f1b2b9805fa3f758da440f9940daedf6ec4ccf04"
 
 [[package]]
 name = "either"
@@ -244,6 +252,32 @@ name = "fnv"
 version = "1.0.7"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "3f9eec918d3f24069decb9af1554cad7c880e2da24a9afd88aca000531ab82c1"
+
+[[package]]
+name = "fpdec"
+version = "0.14.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "ae5f5e1d05d2cabd1d58b3eddfd87a75baf61ec1a9c81c2d32bc008ce9e00bb7"
+dependencies = [
+ "fpdec-core",
+ "fpdec-macros",
+]
+
+[[package]]
+name = "fpdec-core"
+version = "0.13.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "43eb4923be922e6c1fcfbd73e82f828a1888790b2683218e4aefab8f42a750e5"
+
+[[package]]
+name = "fpdec-macros"
+version = "0.13.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "e47515694461b1d2383714a67a8a87949f7184f6b2d1eb2ceb0a49632152d5c4"
+dependencies = [
+ "fpdec-core",
+ "quote",
+]
 
 [[package]]
 name = "getrandom"
@@ -375,6 +409,16 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "85eae3c4ed2f50dcfe72643da4befc30deadb458a9b590d720cde2f2b1e97da9"
 dependencies = [
  "zerocopy",
+]
+
+[[package]]
+name = "primitive_fixed_point_decimal"
+version = "1.5.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "d8126b37c7dc1aef6bd8c365310abdf246dbb52f80a2a173e3816146d094dbe9"
+dependencies = [
+ "div-pow10",
+ "num-traits",
 ]
 
 [[package]]

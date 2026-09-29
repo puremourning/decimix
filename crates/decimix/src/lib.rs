@@ -195,6 +195,11 @@ mod sealed {
   pub trait Sealed {}
 }
 
+/// Compiles and runs the README's examples as doc tests.
+#[cfg(doctest)]
+#[doc = include_str!("../../../README.md")]
+struct ReadmeDoctests;
+
 /// Low-level arithmetic kernels on raw scale-19 values.
 ///
 /// Not part of the public API: public only so that the integration tests and
