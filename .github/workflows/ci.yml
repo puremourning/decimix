@@ -12,7 +12,7 @@ concurrency:
 
 jobs:
   # Shared matrix/fmt/clippy/docs/miri from puremourning/rust-ci. System
-  # dependencies go in .github/actions/setup/action.yml (see CLAUDE.md).
+  # dependencies go in .github/actions/setup/action.yml (see AGENTS.md).
   # Add project-specific jobs alongside this one.
   ci:
     uses: puremourning/rust-ci/.github/workflows/ci.yml@v1
