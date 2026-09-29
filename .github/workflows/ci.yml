@@ -20,4 +20,25 @@ jobs:
       msrv: "1.98"
       # x86_64 and aarch64.
       runners: '["ubuntu-latest", "macos-latest"]'
+      # Everything with the optional `bigdecimal` feature on; the
+      # `no-features` job below covers it off.
+      cargo-args: --workspace --all-features
       miri: true
+      miri-args: --workspace --all-features
+
+  # The default build: no optional features.
+  no-features:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      # rust-toolchain.toml selects the toolchain; rustup installs it.
+      - run: cargo clippy --workspace --all-targets -- -Dwarnings
+      - run: cargo test --workspace
+
+  # The clippy.toml recommended in the decimix docs must ban all four f64
+  # methods, and #[allow] must opt back in.
+  float-lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: ci/check-float-lint.sh
