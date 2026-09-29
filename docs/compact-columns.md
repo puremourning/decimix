@@ -185,6 +185,58 @@ These run at i64 speed and are the reason the type exists:
   or all-false; the functions handle that rather than failing. The API
   shape (a count, positions, a bitmap) is an open question below.
 
+### Searching, sorting and slicing
+
+Within one vector, integer order is value order (every value is the same
+power of ten times its integer), so sorting and searching work directly on
+the stored integers.
+
+```rust
+impl<V: AsRef<[i64]>> DecVec<V> {
+  /// A sub-range as a borrowed vector with the same scale, e.g.
+  /// `book.slice(0..book.lower_bound(px))` for every level below `px`.
+  /// Panics if the range is out of bounds, like slice indexing;
+  /// `get_slice` returns `None` instead.
+  pub fn slice(&self, range: impl RangeBounds<usize>) -> DecVec<&[i64]>;
+  pub fn get_slice(&self, range: impl RangeBounds<usize>)
+    -> Option<DecVec<&[i64]>>;
+  pub fn split_at(&self, mid: usize) -> (DecVec<&[i64]>, DecVec<&[i64]>);
+
+  /// In a sorted vector: the first position whose value is >= `x`
+  /// (`lower_bound`) or > `x` (`upper_bound`), as in C++. `x` may have more
+  /// decimal places than the vector; the search uses the exact comparison
+  /// rules above (`>= x` is `>= ceil(x)` in vector units, `> x` is
+  /// `> floor(x)`), so the answer is exact either way.
+  pub fn lower_bound(&self, x: Dec19) -> usize;
+  pub fn upper_bound(&self, x: Dec19) -> usize;
+
+  /// Like `slice::binary_search`: `Ok(i)` if `x` is stored at `i`, or
+  /// `Err(i)` with where it would go. A value with more decimal places than
+  /// the scale is never stored, so that gives `Err(lower_bound(x))`.
+  pub fn binary_search(&self, x: Dec19) -> Result<usize, usize>;
+
+  pub fn is_sorted(&self) -> bool;
+
+  /// The positions that would sort the vector (stable), for reordering
+  /// several vectors of a struct-of-arrays together: sort the prices'
+  /// positions, then `permute` the prices and the quantities with them.
+  pub fn sorted_indices(&self) -> Vec<usize>;
+}
+
+impl<V: AsMut<[i64]> + AsRef<[i64]>> DecVec<V> {
+  /// Sorts in place (sort_unstable on the integers).
+  pub fn sort(&mut self);
+}
+
+impl DecVec<Vec<i64>> {
+  /// A new vector with `self[indices[k]]` at position k.
+  pub fn permute(&self, indices: &[usize]) -> Self;
+}
+```
+
+A slice keeps the scale because it borrows from the same data; there's no
+way to get the integers of a slice without it except `raw()`, deliberately.
+
 These are plain loops the compiler can vectorise. Explicit SIMD is out of
 scope for a first version (portable code first, `core::arch` only if a
 benchmark justifies it).
@@ -228,6 +280,11 @@ benchmark justifies it).
   the vector, and thresholds outside its range.
 - `sum`, `min`, `max` against the same operations on widened values.
 - `rescale` round trips, and its failures against the oracle.
+- `lower_bound`, `upper_bound` and `binary_search` against a linear scan of
+  widened values, for thresholds with more, the same and fewer decimal
+  places than the vector, below the first and above the last element, and
+  with duplicates. `sort` and `sorted_indices` against sorting the widened
+  values.
 - Benchmarks against `Vec<Dec19>` for the same operations.
 
 ## Questions for review
@@ -239,12 +296,16 @@ benchmark justifies it).
    decimal places than the scale (`Inexact`), and `from_decs_round` rounds
    them with a named mode. Is that the right pair, or should building
    always require the caller to pick one?
-3. **Threshold filters**: which shape is useful: a count, the matching
-   positions, a bitmap, or an iterator? Start with one.
-4. **Cap'n Proto without copying**: as far as I know (not yet verified),
+3. **Threshold filters on unsorted data**: for sorted data, `lower_bound`
+   plus `slice` covers it. For unsorted data, which shape is useful: a
+   count, the matching positions, a bitmap, or an iterator? Start with one.
+4. **Reordering several vectors together**: `sorted_indices` plus
+   `permute` (proposed), or a helper that sorts one vector and applies the
+   same order to others in one call?
+5. **Cap'n Proto without copying**: as far as I know (not yet verified),
    capnp-rust's `primitive_list::Reader` can give a `&[i64]` only when the
    data is suitably aligned and the machine is little-endian. If so, is
    copying into a `Vec<i64>` acceptable when it can't, or should `DecVec`
    accept a small trait of its own instead of `AsRef<[i64]>`?
-5. **Where it lives**: in `decimix` (proposed; it's small and depends only
+6. **Where it lives**: in `decimix` (proposed; it's small and depends only
    on the core types), or a separate crate?
