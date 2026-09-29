@@ -35,7 +35,7 @@ fn main() {
   // Lots: exact division with a remainder, no rounding.
   let lot = dec!(100);
   let qty = dec!(1250);
-  assert_eq!(qty.div_floor(lot), 12);
+  assert_eq!(qty.div_euclid(lot), 12);
   assert_eq!(qty.rem_euclid(lot), dec!(50));
 
   // Decimal x decimal rounds, so it's a method too.

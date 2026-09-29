@@ -33,7 +33,7 @@ fn main() {
 
   // Whole lots in an order, and the odd lot left over.
   let order = Qty::new(udec!(1250));
-  assert_eq!(order.div_floor(LOT), 12);
+  assert_eq!(order.div_euclid(LOT), 12);
   assert_eq!(order.rem_euclid(LOT), Qty::new(udec!(50)));
 
   // Leaves can't go negative; a signed difference is an DeltaQty.

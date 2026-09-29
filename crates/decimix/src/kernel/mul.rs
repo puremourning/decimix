@@ -20,8 +20,10 @@
 //!
 //! Checked against a big-integer oracle in `tests/mul_oracle.rs`, in every
 //! rounding mode. The algorithm was imported from the design discussion (see
-//! `docs/design-brief.md`); since then only the rounding step has changed
-//! (it now supports every mode), and the comments.
+//! `docs/design-brief.md`). Since then: the rounding step supports every
+//! mode; rounding up past 128 bits is reported as overflow (the original
+//! wrapped to 0 in release builds); the whole-number shortcut checks both
+//! operands and rejects whole parts of 2⁶⁴ or more; and the comments.
 
 use crate::round::{Round, decide};
 

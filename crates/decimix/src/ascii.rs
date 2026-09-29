@@ -451,7 +451,8 @@ pub(crate) const fn parse_literal(s: &str) -> Result<Parsed, &'static str> {
     if end - i < 2 || b[end - 1] != b'"' {
       return Err("invalid string literal");
     }
-    return match parse_scalar(b, i + 1, end - 1, true, None) {
+    // The string form reads exactly like `FromStr`: no underscores.
+    return match parse_scalar(b, i + 1, end - 1, false, None) {
       Ok(v) => Ok(v),
       Err(e) => Err(e.as_str()),
     };

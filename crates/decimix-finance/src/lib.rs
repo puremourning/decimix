@@ -247,7 +247,7 @@ impl Price {
     let mut acc = ProductSum::new();
     let mut total = UDec19::ZERO;
     for (px, qty) in fills {
-      acc.add(px.get(), qty.get());
+      acc.checked_add(px.get(), qty.get()).ok()?;
       total = total.checked_add(qty.get())?;
     }
     if total.is_zero() {
@@ -279,7 +279,7 @@ impl Amt {
   {
     let mut acc = ProductSum::new();
     for (px, qty) in fills {
-      acc.add(px.get(), qty.to_base());
+      acc.checked_add(px.get(), qty.to_base())?;
     }
     acc.finish(mode).map(Amt::new)
   }

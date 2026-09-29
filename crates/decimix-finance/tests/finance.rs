@@ -53,6 +53,10 @@ fn sums_and_vwap() {
   // No fills, or no quantity: no VWAP.
   assert_eq!(Price::vwap([], HE), None);
   assert_eq!(Price::vwap([(Price::new(dec!(1)), Qty::ZERO)], HE), None);
+  // The running totals overflowing: no VWAP or sum, rather than a panic.
+  let max = (Price::new(decimix::Dec19::MAX), Qty::new(UDec19::MAX));
+  assert_eq!(Price::vwap([max, max, max], HE), None);
+  assert_eq!(Amt::sum_products([max, max, max], HE), Err(OutOfRange));
   // Total quantity overflowing: no VWAP rather than a panic.
   let huge = Qty::new(UDec19::MAX);
   assert_eq!(
@@ -96,6 +100,6 @@ fn newtype_basics() {
   assert_eq!(px.to_string(), "-1.2345");
   assert_eq!(format!("{px:?}"), "Price(-1.2345)");
   assert_eq!("-1.2345".parse::<Price>(), Ok(px));
-  assert_eq!(Qty::new(udec!(1250)).div_floor(Qty::new(udec!(100))), 12);
+  assert_eq!(Qty::new(udec!(1250)).div_euclid(Qty::new(udec!(100))), 12);
   assert_eq!(Qty::from(3) * 2, Qty::new(udec!(6)));
 }

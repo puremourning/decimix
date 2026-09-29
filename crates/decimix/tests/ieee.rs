@@ -88,8 +88,63 @@ fn step() -> impl Strategy<Value = u128> {
   ]
 }
 
+/// The exact value of a finite double, as a numerator and a positive
+/// denominator: every double is an integer times a power of two.
+fn exact(f: f64) -> (BigInt, BigInt) {
+  let bits = f.to_bits();
+  let exp = ((bits >> 52) & 0x7ff) as i32;
+  let frac = bits & ((1 << 52) - 1);
+  // Subnormals have no hidden bit and the smallest exponent.
+  let (m, e) = if exp == 0 {
+    (frac, -1074)
+  } else {
+    (frac | (1 << 52), exp - 1075)
+  };
+  let m = if bits >> 63 == 1 {
+    -BigInt::from(m)
+  } else {
+    BigInt::from(m)
+  };
+  if e >= 0 {
+    (m << e as u32, BigInt::from(1))
+  } else {
+    (m, BigInt::from(1) << (-e) as u32)
+  }
+}
+
+/// How far double `d` is from the stored value `raw` (× 10^-19), as a
+/// fraction (numerator, denominator), both non-negative.
+fn distance(d: f64, raw: &BigInt) -> (BigInt, BigInt) {
+  let (n, den) = exact(d);
+  let diff = n * pow10(19) - raw * &den;
+  (BigInt::from(diff.magnitude().clone()), den * pow10(19))
+}
+
+/// Checks that `d` is the double nearest to `raw` × 10^-19, ties to even,
+/// with exact arithmetic and no float parsing at all.
+fn is_nearest(d: f64, raw: &BigInt) -> bool {
+  let (dn, dd) = distance(d, raw);
+  [d.next_up(), d.next_down()].iter().all(|&other| {
+    let (on, od) = distance(other, raw);
+    let (mine, theirs) = (&dn * &od, &on * &dd);
+    // Strictly closer, or an exact tie with d's last bit even.
+    mine < theirs || (mine == theirs && d.to_bits() & 1 == 0)
+  })
+}
+
 proptest! {
   #![proptest_config(config())]
+
+  /// The same promise checked from first principles: exact arithmetic on
+  /// the double's binary value and its neighbours, independent of std's
+  /// parser (which the implementation's slow path uses).
+  #[test]
+  fn to_f64_is_the_nearest_double(raw in value(), uraw in uvalue()) {
+    let d = Dec19::from_raw(raw).to_f64_lossy();
+    prop_assert!(is_nearest(d, &BigInt::from(raw)), "{} -> {:?}", raw, d);
+    let d = UDec19::from_raw(uraw).to_f64_lossy();
+    prop_assert!(is_nearest(d, &BigInt::from(uraw)), "{} -> {:?}", uraw, d);
+  }
 
   /// The nearest double, bit for bit what std gives when parsing the text.
   #[test]

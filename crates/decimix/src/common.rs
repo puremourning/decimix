@@ -250,33 +250,72 @@ macro_rules! impl_fixed19 {
 
       // ---- Division that doesn't round ------------------------------------
 
-      /// How many whole `rhs` fit in `self`, rounding toward negative
-      /// infinity. Exact.
+      /// How many whole `rhs` fit in `self`: Euclidean division, as std's
+      /// `div_euclid`. Exact.
       ///
-      /// For lot and clip counts. Pairs with
-      /// [`rem_euclid`](Self::rem_euclid):
-      /// `self == rhs * self.div_floor(rhs) + self.rem_euclid(rhs)`.
+      /// For lot and clip counts, and for snapping to a grid. Pairs with
+      /// [`rem_euclid`](Self::rem_euclid): always
+      /// `self == rhs * self.div_euclid(rhs) + self.rem_euclid(rhs)`, with
+      /// a remainder that is never negative.
+      ///
+      /// With a positive `rhs` (a lot or tick size, the usual case) the
+      /// count rounds down, toward negative infinity, even for negative
+      /// values: −1.47 with a tick of 0.05 is −30 ticks and 0.03 over
+      /// (−1.5 + 0.03), not −29. Rust's `/` on integers would round toward
+      /// zero instead, which is wrong for grids. With a negative `rhs` the
+      /// count rounds the other way, so that the remainder still isn't
+      /// negative.
+      ///
+      #[doc = concat!("```\nuse decimix::", $mac, ";\n")]
+      #[doc = concat!("let tick = ", $mac, "!(0.05);")]
+      #[doc = concat!("assert_eq!(", $mac, "!(1250).div_euclid(", $mac, "!(100)), 12);")]
+      #[doc = concat!("assert_eq!(", $mac, "!(1.47).div_euclid(tick), 29);")]
+      #[doc = concat!("assert_eq!(", $mac, "!(1.47).rem_euclid(tick), ", $mac, "!(0.02));")]
+      #[doc = "```"]
       ///
       /// # Panics
       ///
-      /// If `rhs` is zero.
+      /// If `rhs` is zero, or if the count overflows (only
+      /// [`MIN`](Self::MIN) divided by minus the smallest step). See
+      /// [`checked_div_euclid`](Self::checked_div_euclid).
       #[must_use]
       #[inline]
       #[track_caller]
-      pub const fn div_floor(self, rhs: Self) -> $raw {
+      pub const fn div_euclid(self, rhs: Self) -> $raw {
         self.0.div_euclid(rhs.0)
       }
 
-      /// What is left after taking whole `rhs` out of `self`. Exact, and
-      /// never negative.
+      /// What is left after taking whole `rhs` out of `self`, as std's
+      /// `rem_euclid`. Exact, and never negative. See
+      /// [`div_euclid`](Self::div_euclid).
       ///
       /// # Panics
       ///
-      /// If `rhs` is zero.
+      /// If `rhs` is zero, or for [`MIN`](Self::MIN) divided by minus the
+      /// smallest step. See [`checked_rem_euclid`](Self::checked_rem_euclid).
       #[inline]
       #[track_caller]
       pub const fn rem_euclid(self, rhs: Self) -> Self {
         Self(self.0.rem_euclid(rhs.0))
+      }
+
+      /// [`div_euclid`](Self::div_euclid), or `None` if `rhs` is zero or the
+      /// count overflows.
+      #[must_use]
+      #[inline]
+      pub const fn checked_div_euclid(self, rhs: Self) -> Option<$raw> {
+        self.0.checked_div_euclid(rhs.0)
+      }
+
+      /// [`rem_euclid`](Self::rem_euclid), or `None` if `rhs` is zero or the
+      /// division overflows.
+      #[must_use]
+      #[inline]
+      pub const fn checked_rem_euclid(self, rhs: Self) -> Option<Self> {
+        match self.0.checked_rem_euclid(rhs.0) {
+          Some(v) => Some(Self(v)),
+          None => None,
+        }
       }
 
       // ---- Rounding --------------------------------------------------------

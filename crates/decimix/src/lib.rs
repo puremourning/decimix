@@ -56,9 +56,10 @@
 //! [`Dec19::round_dp`] and so on. There is no default rounding and no hidden
 //! context. See [`Round`] for what each mode does, with examples.
 //!
-//! Exact divisions that don't round have their own methods:
-//! [`Dec19::div_floor`] (how many whole lots fit) and [`Dec19::rem_euclid`]
-//! (what's left over). Both are correct for negative values, unlike Rust's
+//! Exact divisions that don't round have their own methods, named as in std:
+//! [`Dec19::div_euclid`] (how many whole lots or ticks fit) and
+//! [`Dec19::rem_euclid`] (what's left over, never negative). With a positive
+//! lot or tick size they count down for negative values too, unlike Rust's
 //! `/` on integers, which rounds toward zero.
 //!
 //! To add up many products (notional, a VWAP numerator), use [`ProductSum`]:
@@ -127,7 +128,7 @@
 //! ```
 //!
 //! Multiplying two decimals can round, so there is no `*` between them, and
-//! no `/` or `%` at all (use `mul`, `div`, `div_floor`, `rem_euclid`):
+//! no `/` or `%` at all (use `mul`, `div`, `div_euclid`, `rem_euclid`):
 //!
 //! ```compile_fail
 //! let (a, b) = (decimix::dec!(1.5), decimix::dec!(2));

@@ -210,9 +210,21 @@ fn rounding_examples() {
     dec!(10).div_int(-3, Round::Floor),
     dec!(-3.3333333333333333334)
   );
-  assert_eq!(dec!(1250).div_floor(dec!(100)), 12);
-  assert_eq!(dec!(-1250).div_floor(dec!(100)), -13);
+  assert_eq!(dec!(1250).div_euclid(dec!(100)), 12);
+  assert_eq!(dec!(-1250).div_euclid(dec!(100)), -13);
   assert_eq!(dec!(-1250).rem_euclid(dec!(100)), dec!(50));
+  // A negative price in a band with a positive tick counts down.
+  assert_eq!(dec!(-1.47).div_euclid(dec!(0.05)), -30);
+  assert_eq!(dec!(-1.47).rem_euclid(dec!(0.05)), dec!(0.03));
+  // A negative divisor: the remainder still isn't negative.
+  assert_eq!(dec!(7).div_euclid(dec!(-2)), -3);
+  assert_eq!(dec!(7).rem_euclid(dec!(-2)), dec!(1));
+  // The one overflow: MIN divided by minus the smallest step.
+  let minus_one_step = -Dec19::SMALLEST_STEP;
+  assert_eq!(Dec19::MIN.checked_div_euclid(minus_one_step), None);
+  assert_eq!(Dec19::MIN.checked_rem_euclid(minus_one_step), None);
+  assert!(catch_unwind(|| Dec19::MIN.div_euclid(minus_one_step)).is_err());
+  assert_eq!(dec!(1).checked_div_euclid(Dec19::ZERO), None);
   assert_eq!(dec!(1).checked_div_int(0, Round::HalfEven), None);
   assert!(
     catch_unwind(|| dec!(1).round_to(Dec19::ZERO, Round::Floor)).is_err()
@@ -302,13 +314,30 @@ proptest! {
     }
   }
 
+  /// Euclidean division, for divisors of either sign: the remainder is
+  /// never negative, and the count is whatever makes the two add up.
   #[test]
-  fn div_floor_and_rem_euclid_match_oracle(raw in value(), step in step()) {
-    let x = Dec19::from_raw(raw);
-    let y = Dec19::from_raw(step);
-    let (q, r) = BigInt::from(raw).div_mod_floor(&BigInt::from(step));
-    prop_assert_eq!(BigInt::from(x.div_floor(y)), q);
-    prop_assert_eq!(BigInt::from(x.rem_euclid(y).to_raw()), r);
+  fn div_euclid_and_rem_euclid_match_oracle(
+    raw in value(),
+    step in step(),
+    negative_step in any::<bool>(),
+  ) {
+    let step = if negative_step { -step } else { step };
+    let (x, y) = (Dec19::from_raw(raw), Dec19::from_raw(step));
+    let (a, b) = (BigInt::from(raw), BigInt::from(step));
+    let abs_b = BigInt::from(b.magnitude().clone());
+    let r = a.mod_floor(&abs_b); // 0 <= r < |b|
+    let q = (&a - &r) / &b; // exact
+    let fits = i128::try_from(&q).is_ok();
+    prop_assert_eq!(x.checked_div_euclid(y).map(BigInt::from), fits.then(|| q.clone()));
+    prop_assert_eq!(
+      x.checked_rem_euclid(y).map(|v| BigInt::from(v.to_raw())),
+      fits.then(|| r.clone())
+    );
+    if fits {
+      prop_assert_eq!(BigInt::from(x.div_euclid(y)), q);
+      prop_assert_eq!(BigInt::from(x.rem_euclid(y).to_raw()), r);
+    }
   }
 
   #[test]

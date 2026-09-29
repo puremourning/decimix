@@ -87,10 +87,10 @@ proptest! {
   }
 
   #[test]
-  fn div_floor_and_rem_euclid_match_oracle(a in uvalue(), b in 1u128..=u128::MAX) {
+  fn div_euclid_and_rem_euclid_match_oracle(a in uvalue(), b in 1u128..=u128::MAX) {
     let (x, y) = (UDec19::from_raw(a), UDec19::from_raw(b));
     let (q, r) = ubig(a).div_mod_floor(&ubig(b));
-    prop_assert_eq!(ubig(x.div_floor(y)), q);
+    prop_assert_eq!(ubig(x.div_euclid(y)), q);
     prop_assert_eq!(ubig(x.rem_euclid(y).to_raw()), r);
   }
 

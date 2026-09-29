@@ -24,6 +24,10 @@ use crate::{Dec19, OutOfRange, Round};
 /// assert_eq!(filled.checked_sub(ordered), None);
 /// assert_eq!(filled.signed_sub(ordered), dec!(-749.5));
 /// ```
+///
+/// Formatting with a precision, as in `format!("{x:.2}")`, rounds half-even,
+/// as std does for floats. To choose the rounding, use
+/// [`write_ascii_dp`](Self::write_ascii_dp) or [`round_dp`](Self::round_dp).
 #[derive(Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, Default)]
 #[must_use]
 #[repr(transparent)]

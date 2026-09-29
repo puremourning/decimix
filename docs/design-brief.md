@@ -61,7 +61,9 @@ multiply path, `dec19.rs`, accompanies this brief.
 - **Sums of products** (notional, VWAP numerators): accumulate at scale 38 in a 256-bit
   accumulator, divide once at the end. Faster and more exact.
 - **Division, by case:**
-  1. `div_floor(self, rhs) -> i128` and `rem_euclid(self, rhs) -> Dec19`: scales cancel,
+  1. `div_euclid(self, rhs) -> i128` and `rem_euclid(self, rhs) -> Dec19` (named as in
+     std; originally `div_floor`, renamed because with a negative divisor Euclidean
+     division doesn't round down, which clashed with `Round::Floor`): scales cancel,
      so these are i128 `div_euclid`/`rem_euclid` on mantissas. Exact. Covers lot counts,
      clip counts, **tick snapping** (`px.div_euclid(tick) * tick`).
   2. `div_int(self, n, Round) -> Dec19`: mantissa ÷ integer, remainder drives rounding.

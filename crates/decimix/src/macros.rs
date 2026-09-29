@@ -30,6 +30,13 @@
 /// ```compile_fail
 /// let x = decimix::dec!(0.12345678901234567891); // 20 places
 /// ```
+///
+/// A string literal reads exactly like [`FromStr`](core::str::FromStr), so
+/// underscores are only for number literals:
+///
+/// ```compile_fail
+/// let x = decimix::dec!("1_000");
+/// ```
 #[macro_export]
 macro_rules! dec {
   ($lit:literal) => {
@@ -97,7 +104,7 @@ macro_rules! udec {
 /// - same-type `+`, `-` (and unary `-` for `Dec19`), `+=`, `-=`, `Sum`, and
 ///   `*` by an integer (`i64`, or `u64` for `UDec19`), with `checked_*` and
 ///   `saturating_*` versions;
-/// - `round_to`, `round_dp`, `div_floor`, `rem_euclid`, `div_int`, and
+/// - `round_to`, `round_dp`, `div_euclid`, `rem_euclid`, `div_int`, and
 ///   `mul_dec` (multiply by a plain base-type value, e.g. a ratio);
 /// - `Display`, `Debug` (`FeeRate(0.0002)`), `FromStr`, `from_ascii`,
 ///   `write_ascii` and `to_ascii`.
@@ -263,17 +270,17 @@ macro_rules! __newtype_common {
         Self(self.0.round_dp(places, mode))
       }
 
-      /// How many whole `rhs` fit in `self`, rounding toward negative
-      /// infinity. Exact.
+      /// How many whole `rhs` fit in `self` (Euclidean division). Exact.
+      /// See the base type's `div_euclid`.
       #[must_use]
       #[inline]
       #[track_caller]
-      pub const fn div_floor(self, rhs: Self) -> $raw {
-        self.0.div_floor(rhs.0)
+      pub const fn div_euclid(self, rhs: Self) -> $raw {
+        self.0.div_euclid(rhs.0)
       }
 
       /// What is left after taking whole `rhs` out of `self`. Never
-      /// negative.
+      /// negative. See the base type's `rem_euclid`.
       #[inline]
       #[track_caller]
       pub const fn rem_euclid(self, rhs: Self) -> Self {

@@ -28,6 +28,10 @@ use crate::{Fixed19, OutOfRange, Round, UDec19};
 /// let tick = dec!(0.01);
 /// assert_eq!(px.round_to(tick, Round::HalfEven), dec!(113.72));
 /// ```
+///
+/// Formatting with a precision, as in `format!("{x:.2}")`, rounds half-even,
+/// as std does for floats. To choose the rounding, use
+/// [`write_ascii_dp`](Self::write_ascii_dp) or [`round_dp`](Self::round_dp).
 #[derive(Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, Default)]
 #[must_use]
 #[repr(transparent)]
@@ -198,7 +202,7 @@ impl Dec19 {
   ///
   /// `rhs` may be a [`Dec19`] or a [`UDec19`]. For dividing by a whole
   /// number, [`div_int`](Self::div_int) is faster; for lot counts, use the
-  /// exact [`div_floor`](Self::div_floor).
+  /// exact [`div_euclid`](Self::div_euclid).
   ///
   /// # Panics
   ///

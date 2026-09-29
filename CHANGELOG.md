@@ -23,6 +23,8 @@ solely on incompatible or API changes. For the full changelog see the git log.
   `from_big`, `TryFrom<&BigDecimal>`.
 - Rounding multiplication and division (`mul`, `div` and their `checked_`
   and `saturating_` forms); `Dec19` accepts a `UDec19` operand.
+- Exact Euclidean division for lot counts and grids, named as in std:
+  `div_euclid`, `rem_euclid` and their `checked_` forms.
 - `ProductSum` for exact sums of products (`add`, `checked_add`, `finish`,
   `div`); `newtype!` for domain types.
 - `decimix-finance` crate (unpublished): `Price`, `Qty` (unsigned quantity),
