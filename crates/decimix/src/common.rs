@@ -49,6 +49,7 @@ macro_rules! impl_fixed19 {
     int = $int:ty,
     mac = $mac:literal,
     max_ascii_len = $max_ascii_len:expr,
+    sub_overflow = $sub_overflow:literal,
   ) => {
     impl $T {
       /// Zero.
@@ -556,7 +557,7 @@ macro_rules! impl_fixed19 {
       fn sub(self, rhs: Self) -> Self {
         self
           .checked_sub(rhs)
-          .expect(concat!(stringify!($T), " overflow in subtraction"))
+          .expect($sub_overflow)
       }
     }
 

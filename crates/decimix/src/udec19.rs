@@ -35,6 +35,7 @@ impl_fixed19! {
   int = u64,
   mac = "udec",
   max_ascii_len = 40,
+  sub_overflow = "UDec19 subtraction would be negative",
 }
 
 impl UDec19 {

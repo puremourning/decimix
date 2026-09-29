@@ -39,6 +39,7 @@ impl_fixed19! {
   int = i64,
   mac = "dec",
   max_ascii_len = 41,
+  sub_overflow = "Dec19 overflow in subtraction",
 }
 
 impl Dec19 {
