@@ -22,14 +22,29 @@ pre-release-replacements = [
   { file = "../../README.md", search = 'decimix = "[^"]+"', replace = 'decimix = "{{version}}"', exactly = 1 },
 ]
 
+[features]
+default = []
+## Exact conversions to and from `bigdecimal::BigDecimal`.
+bigdecimal = ["dep:bigdecimal"]
+
 [dependencies]
+bigdecimal = { workspace = true, optional = true }
 
 [dev-dependencies]
 criterion.workspace = true
+itoa.workspace = true
 num-bigint.workspace = true
 num-integer.workspace = true
 proptest.workspace = true
 
+[[example]]
+name = "bigdecimal"
+required-features = ["bigdecimal"]
+
 [[bench]]
 name = "mul"
+harness = false
+
+[[bench]]
+name = "ascii"
 harness = false

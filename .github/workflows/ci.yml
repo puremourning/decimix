@@ -18,6 +18,6 @@ jobs:
     uses: puremourning/rust-ci/.github/workflows/ci.yml@v1
     with:
       msrv: "1.98"
-      # x86_64 (with the inline-asm mul19_hw path) and aarch64.
+      # x86_64 and aarch64.
       runners: '["ubuntu-latest", "macos-latest"]'
       miri: true

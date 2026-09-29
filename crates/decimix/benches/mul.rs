@@ -25,10 +25,6 @@ fn bench_mul(c: &mut Criterion) {
   g.bench_function("mul19_fast/miss", |b| {
     b.iter(|| mul::mul19_fast(black_box(px), black_box(qty)))
   });
-  #[cfg(target_arch = "x86_64")]
-  g.bench_function("mul19_hw", |b| {
-    b.iter(|| mul::mul19_hw(black_box(px), black_box(qty)))
-  });
   g.bench_function("i128_mul", |b| {
     b.iter(|| black_box(px).wrapping_mul(black_box(qty)))
   });

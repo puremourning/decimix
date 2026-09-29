@@ -144,6 +144,10 @@ hardware `div` on production CPUs; newer cores divide much faster.
   Java `equals` including scale, Java `divide` throwing on non-terminating results,
   Python's silent context rounding (28 digits default), scale growth, allocation per op.
 
+benchmark vs floating point: https://docs.rs/fpdec/latest/fpdec/
+and fixed poitn: https://docs.rs/primitive_fixed_point_decimal/latest/primitive_fixed_point_decimal/
+
+
 ## Open questions (raise, don't assume)
 
 - A compact `Fixed64` (i64 at a chosen scale) for dense quantity columns (half the cache
