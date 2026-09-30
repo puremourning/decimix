@@ -47,9 +47,10 @@ ticked; the git log has the history.
 - [ ] Wide analytics accumulator: `ProductSum` already sums products and
   squares exactly (`acc.add(x, x)`), but can't combine totals, e.g.
   n·Σx² − (Σx)² for a variance. Low priority.
-- [ ] Wider quantity support for very large base-unit amounts (e.g. wei):
-  these must be scaled at ingest today (`from_scaled`); `Dec19` holds about
-  ±1.7 × 10¹⁹ whole units.
+- [ ] **Units and base-unit amounts** (e.g. wei): review the proposal in
+  [`units.md`](units.md) (values stored as quoted; exact
+  `from_units`/`to_units` for `i128`/`u128` where conventions meet), then
+  implement.
 
 ## Integrations
 
