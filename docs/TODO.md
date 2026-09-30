@@ -48,9 +48,9 @@ ticked; the git log has the history.
   squares exactly (`acc.add(x, x)`), but can't combine totals, e.g.
   n·Σx² − (Σx)² for a variance. Low priority.
 - [ ] **Units and base-unit amounts** (e.g. wei): review the proposal in
-  [`units.md`](units.md) (values stored as quoted; exact
-  `from_units`/`to_units` for `i128`/`u128` where conventions meet), then
-  implement.
+  [`units.md`](units.md) (store venue values, never normalise; exact
+  `from_units`/`to_units` for `i128`/`u128`, for implied-decimal wire
+  formats such as CME order entry and for base units), then implement.
 
 ## Integrations
 
