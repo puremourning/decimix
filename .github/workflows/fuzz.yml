@@ -2,11 +2,16 @@ name: Fuzz
 
 # Coverage-guided fuzzing of text parsing, multiply/divide and the f64
 # boundary, each checked against an exact big-integer oracle. Runs on pushes
-# to main, weekly, and on demand; not on every pull request, to keep PR CI
-# fast.
+# to main, weekly, and on demand; on pull requests only when they change the
+# fuzzing itself, to keep other PRs fast.
 on:
   push:
     branches: [main]
+  pull_request:
+    branches: [main]
+    paths:
+      - fuzz/**
+      - .github/workflows/fuzz.yml
   schedule:
     - cron: "17 3 * * 1"
   workflow_dispatch:
@@ -24,22 +29,27 @@ jobs:
       matrix:
         target: [parse, arith, f64]
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       # cargo-fuzz isn't one of install-action's built-in tools (so the
       # `@cargo-fuzz` tag form silently installs nothing); with `tool:` it
       # falls back to cargo-binstall.
       - uses: taiki-e/install-action@v2
         with:
           tool: cargo-fuzz
-      # rust-toolchain.toml pins nightly, which cargo-fuzz needs.
+      # rust-toolchain.toml pins nightly, which cargo-fuzz needs. Build for
+      # the host explicitly: cargo-fuzz otherwise defaults to the target it
+      # was itself built for, and the prebuilt binary is a musl build, which
+      # AddressSanitizer can't use.
       - name: Fuzz ${{ matrix.target }}
         working-directory: fuzz
         run: >
-          cargo fuzz run ${{ matrix.target }} --
+          cargo fuzz run
+          --target "$(rustc -vV | sed -n 's/^host: //p')"
+          ${{ matrix.target }} --
           -max_total_time=${{ github.event.inputs.seconds || '120' }}
       - name: Upload crash inputs
         if: failure()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: fuzz-artifacts-${{ matrix.target }}
           path: fuzz/artifacts
