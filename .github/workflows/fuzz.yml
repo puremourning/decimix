@@ -1,0 +1,40 @@
+name: Fuzz
+
+# Coverage-guided fuzzing of text parsing, multiply/divide and the f64
+# boundary, each checked against an exact big-integer oracle. Runs on pushes
+# to main, weekly, and on demand; not on every pull request, to keep PR CI
+# fast.
+on:
+  push:
+    branches: [main]
+  schedule:
+    - cron: "17 3 * * 1"
+  workflow_dispatch:
+    inputs:
+      seconds:
+        description: Seconds to fuzz each target.
+        required: false
+        default: "300"
+
+jobs:
+  fuzz:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        target: [parse, arith, f64]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: taiki-e/install-action@cargo-fuzz
+      # rust-toolchain.toml pins nightly, which cargo-fuzz needs.
+      - name: Fuzz ${{ matrix.target }}
+        working-directory: fuzz
+        run: >
+          cargo fuzz run ${{ matrix.target }} --
+          -max_total_time=${{ github.event.inputs.seconds || '120' }}
+      - name: Upload crash inputs
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: fuzz-artifacts-${{ matrix.target }}
+          path: fuzz/artifacts

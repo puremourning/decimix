@@ -19,7 +19,8 @@ multiply path, `dec19.rs`, accompanies this brief.
 
 ### Representation
 - **`Dec19`: an `i128` mantissa at a fixed scale of 19** (value = mantissa × 10⁻¹⁹).
-  Range ±1.7×10¹⁹ whole units, resolution 10⁻¹⁹, 38 significant digits.
+  Range ±1.7×10¹⁹ whole units, resolution 10⁻¹⁹: all 38-digit values below 10¹⁹,
+  and 39 digits at the top of the range (i128::MAX has 39 digits).
 - Crate name **`decimix`**, main type **`decimix::Dec19`**. If other decimal types are
   added later (e.g. `Dec9`, `Dec38`), they live under the same crate.
 - Messages carry `Dec19` as i128 (e.g. two u64 halves in Cap'n Proto). No per-value
@@ -61,7 +62,9 @@ multiply path, `dec19.rs`, accompanies this brief.
 - **Sums of products** (notional, VWAP numerators): accumulate at scale 38 in a 256-bit
   accumulator, divide once at the end. Faster and more exact.
 - **Division, by case:**
-  1. `div_floor(self, rhs) -> i128` and `rem_euclid(self, rhs) -> Dec19`: scales cancel,
+  1. `div_euclid(self, rhs) -> i128` and `rem_euclid(self, rhs) -> Dec19` (named as in
+     std; originally `div_floor`, renamed because with a negative divisor Euclidean
+     division doesn't round down, which clashed with `Round::Floor`): scales cancel,
      so these are i128 `div_euclid`/`rem_euclid` on mantissas. Exact. Covers lot counts,
      clip counts, **tick snapping** (`px.div_euclid(tick) * tick`).
   2. `div_int(self, n, Round) -> Dec19`: mantissa ÷ integer, remainder drives rounding.
@@ -143,6 +146,10 @@ hardware `div` on production CPUs; newer cores divide much faster.
 - Java `BigDecimal` / Python `Decimal` hazards the design removes: float constructors,
   Java `equals` including scale, Java `divide` throwing on non-terminating results,
   Python's silent context rounding (28 digits default), scale growth, allocation per op.
+
+benchmark vs floating point: https://docs.rs/fpdec/latest/fpdec/
+and fixed poitn: https://docs.rs/primitive_fixed_point_decimal/latest/primitive_fixed_point_decimal/
+
 
 ## Open questions (raise, don't assume)
 

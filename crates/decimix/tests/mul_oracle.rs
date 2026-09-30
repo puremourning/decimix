@@ -1,112 +1,53 @@
 //! Differential test of the scale-19 multiply kernels against a big-integer
 //! oracle. Replaces the Python reference used during the design discussion.
 
-use decimix::kernel::mul::{mul19, mul19_fast, mul19_floor};
+mod common;
+
+use common::{D, MODES, config, round_div, value};
+use decimix::Round;
+use decimix::kernel::mul::{
+  mul19,
+  mul19_fast,
+  mul19_fast_round,
+  mul19_floor,
+  mul19_round,
+};
 use num_bigint::BigInt;
-use num_integer::Integer;
 use proptest::prelude::*;
 
-const D: i128 = 10_000_000_000_000_000_000;
-
-#[derive(Clone, Copy)]
-enum Mode {
-  HalfEven,
-  Floor,
-}
-
 /// Exact `a * b / 10^19`, rounded, or `None` if it doesn't fit an i128.
-fn oracle(a: i128, b: i128, mode: Mode) -> Option<i128> {
+fn oracle(a: i128, b: i128, mode: Round) -> Option<i128> {
   let p = BigInt::from(a) * BigInt::from(b);
-  let d = BigInt::from(D);
-  let q = match mode {
-    Mode::Floor => p.div_floor(&d),
-    Mode::HalfEven => {
-      let (mut q, r) = p.magnitude().div_rem(d.magnitude());
-      let twice = &r * 2u32;
-      if twice > *d.magnitude() || (twice == *d.magnitude() && q.is_odd()) {
-        q += 1u32;
-      }
-      let q = BigInt::from(q);
-      if p.sign() == num_bigint::Sign::Minus {
-        -q
-      } else {
-        q
-      }
-    }
-  };
-  i128::try_from(q).ok()
-}
-
-/// Values biased towards the edges: ±1, powers of ten and their neighbours,
-/// exact halves, whole numbers and the i128 limits.
-fn value() -> impl Strategy<Value = i128> {
-  let pow10 = (0u32..=38, -1i128..=1, any::<bool>()).prop_map(|(e, d, neg)| {
-    let v = 10i128.pow(e) + d;
-    if neg { -v } else { v }
-  });
-  let small_times_pow10 =
-    (-100i128..=100, 0u32..=36).prop_map(|(m, e)| m * 10i128.pow(e));
-  let half = any::<i64>().prop_map(|k| k as i128 * D + D / 2);
-  let whole = any::<i64>().prop_map(|k| k as i128 * D);
-  let limits = prop_oneof![
-    Just(0i128),
-    Just(1),
-    Just(-1),
-    Just(i128::MAX),
-    Just(i128::MIN),
-    Just(i128::MAX - 1),
-    Just(i128::MIN + 1),
-  ];
-  let moderate = -(10i128.pow(29))..10i128.pow(29);
-  prop_oneof![
-    3 => any::<i128>(),
-    3 => moderate,
-    2 => pow10,
-    2 => small_times_pow10,
-    1 => half,
-    2 => whole,
-    1 => limits,
-  ]
-}
-
-fn config() -> ProptestConfig {
-  if cfg!(miri) {
-    // Miri is ~1000x slower and has no filesystem access for persistence.
-    ProptestConfig {
-      cases: 32,
-      failure_persistence: None,
-      ..ProptestConfig::default()
-    }
-  } else {
-    ProptestConfig::with_cases(20_000)
-  }
+  i128::try_from(round_div(&p, &BigInt::from(D), mode)).ok()
 }
 
 proptest! {
   #![proptest_config(config())]
 
   #[test]
-  fn mul19_half_even_matches_oracle(a in value(), b in value()) {
-    prop_assert_eq!(mul19(a, b), oracle(a, b, Mode::HalfEven));
+  fn mul19_round_matches_oracle(a in value(), b in value()) {
+    for mode in MODES {
+      prop_assert_eq!(mul19_round(a, b, mode), oracle(a, b, mode), "{:?}", mode);
+    }
   }
 
   #[test]
-  fn mul19_floor_matches_oracle(a in value(), b in value()) {
-    prop_assert_eq!(mul19_floor(a, b), oracle(a, b, Mode::Floor));
+  fn mul19_fast_round_matches_oracle(a in value(), b in value()) {
+    for mode in MODES {
+      prop_assert_eq!(
+        mul19_fast_round(a, b, mode),
+        oracle(a, b, mode),
+        "{:?}",
+        mode
+      );
+    }
   }
 
   #[test]
-  fn mul19_fast_matches_oracle(a in value(), b in value()) {
-    prop_assert_eq!(mul19_fast(a, b), oracle(a, b, Mode::HalfEven));
-  }
-
-  #[cfg(all(target_arch = "x86_64", not(miri)))]
-  #[test]
-  fn mul19_hw_matches_oracle(a in value(), b in value()) {
-    prop_assert_eq!(
-      decimix::kernel::mul::mul19_hw(a, b),
-      oracle(a, b, Mode::HalfEven)
-    );
+  fn wrappers_match_oracle(a in value(), b in value()) {
+    prop_assert_eq!(mul19(a, b), oracle(a, b, Round::HalfEven));
+    prop_assert_eq!(mul19_floor(a, b), oracle(a, b, Round::Floor));
+    prop_assert_eq!(mul19_fast(a, b), oracle(a, b, Round::HalfEven));
   }
 }
 
@@ -118,6 +59,19 @@ fn half_even_ties() {
   assert_eq!(mul19(15, D / 10), Some(2));
   assert_eq!(mul19(-15, D / 10), Some(-2));
   assert_eq!(mul19_floor(-5, D / 10), Some(-1));
+  // Exact halves in every mode: +-2.5e-19 and +-3.5e-19.
+  let expect = [
+    (Round::HalfEven, [2, 4, -2, -4]),
+    (Round::HalfAwayFromZero, [3, 4, -3, -4]),
+    (Round::Floor, [2, 3, -3, -4]),
+    (Round::Ceiling, [3, 4, -2, -3]),
+    (Round::TowardZero, [2, 3, -2, -3]),
+    (Round::AwayFromZero, [3, 4, -3, -4]),
+  ];
+  for (mode, want) in expect {
+    let got = [25, 35, -25, -35].map(|m| mul19_round(m, D / 10, mode).unwrap());
+    assert_eq!(got, want, "{mode:?}");
+  }
 }
 
 #[test]
@@ -127,4 +81,22 @@ fn limits() {
   assert_eq!(mul19(i128::MIN, -D), None);
   assert_eq!(mul19_fast(i128::MIN, -D), None);
   assert_eq!(mul19(i128::MAX, 2 * D), None);
+}
+
+/// The exact quotient here is 2^128 - 1 and it rounds up, so adding the
+/// rounding step overflows 128 bits. The kernel as imported from the design
+/// discussion wrapped that to 0 in release builds and returned `Some(0)`.
+/// Found by searching for this case directly: random inputs essentially
+/// never land in it.
+#[test]
+fn rounding_up_past_128_bits_is_overflow() {
+  let (a, b) = (
+    21_189_744_572_521_508_864,
+    160_588_234_443_472_575_470_994_451_365_708_965_247,
+  );
+  assert_eq!(oracle(a, b, Round::HalfEven), None);
+  for mode in MODES {
+    assert_eq!(mul19_round(a, b, mode), None, "{mode:?}");
+    assert_eq!(mul19_fast_round(a, b, mode), None, "{mode:?}");
+  }
 }

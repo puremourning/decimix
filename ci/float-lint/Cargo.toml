@@ -1,0 +1,18 @@
+# Checks that the clippy.toml recommended in decimix's crate docs really bans
+# the f64 methods. Not part of the main workspace; run by
+# ci/check-float-lint.sh.
+[package]
+name = "float-lint-check"
+version = "0.0.0"
+edition = "2024"
+publish = false
+
+[dependencies]
+decimix = { path = "../../crates/decimix" }
+
+[features]
+# Adds uses of each banned method without an #[allow], which clippy must
+# reject.
+violate = []
+
+[workspace]

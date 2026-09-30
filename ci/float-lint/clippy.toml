@@ -1,0 +1,7 @@
+# Exactly the snippet recommended in the decimix crate docs.
+disallowed-methods = [
+  { path = "decimix::Dec19::to_f64_lossy", reason = "floats only at I/O edges; use to_big() for maths" },
+  { path = "decimix::Dec19::from_f64_lossy", reason = "floats only at I/O edges" },
+  { path = "decimix::UDec19::to_f64_lossy", reason = "floats only at I/O edges; use to_big() for maths" },
+  { path = "decimix::UDec19::from_f64_lossy", reason = "floats only at I/O edges" },
+]

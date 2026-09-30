@@ -1,6 +1,7 @@
 use std::hint::black_box;
 
 use criterion::{Criterion, criterion_group, criterion_main};
+use decimix::Round;
 use decimix::kernel::mul;
 
 const D: i128 = 10_000_000_000_000_000_000;
@@ -16,6 +17,15 @@ fn bench_mul(c: &mut Criterion) {
   g.bench_function("mul19", |b| {
     b.iter(|| mul::mul19(black_box(px), black_box(qty)))
   });
+  g.bench_function("mul19_round/runtime_mode", |b| {
+    b.iter(|| {
+      mul::mul19_round(
+        black_box(px),
+        black_box(qty),
+        black_box(Round::HalfEven),
+      )
+    })
+  });
   g.bench_function("mul19_floor", |b| {
     b.iter(|| mul::mul19_floor(black_box(px), black_box(qty)))
   });
@@ -24,10 +34,6 @@ fn bench_mul(c: &mut Criterion) {
   });
   g.bench_function("mul19_fast/miss", |b| {
     b.iter(|| mul::mul19_fast(black_box(px), black_box(qty)))
-  });
-  #[cfg(target_arch = "x86_64")]
-  g.bench_function("mul19_hw", |b| {
-    b.iter(|| mul::mul19_hw(black_box(px), black_box(qty)))
   });
   g.bench_function("i128_mul", |b| {
     b.iter(|| black_box(px).wrapping_mul(black_box(qty)))

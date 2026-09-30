@@ -7,8 +7,10 @@ Guidance for Claude Code when working in this repository.
 `docs/design-brief.md` holds the settled design decisions for `Dec19` and the
 open questions. Treat the decisions as settled; raise the open questions rather
 than deciding them silently. The multiply kernel in
-`crates/decimix/src/kernel/mul.rs` is verified code from that discussion and is
-checked against a big-integer oracle in `tests/mul_oracle.rs`.
+`crates/decimix/src/kernel/mul.rs` came from that discussion; it has since been
+extended to all six rounding modes and fixed for one overflow case (rounding up
+past 128 bits), and is checked against a big-integer oracle in
+`tests/mul_oracle.rs`.
 
 ## Layout
 
