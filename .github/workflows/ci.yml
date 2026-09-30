@@ -30,7 +30,7 @@ jobs:
   no-features:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       # rust-toolchain.toml selects the toolchain; rustup installs it.
       - run: cargo clippy --workspace --all-targets -- -Dwarnings
       - run: cargo test --workspace
@@ -40,5 +40,5 @@ jobs:
   float-lint:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - run: ci/check-float-lint.sh
