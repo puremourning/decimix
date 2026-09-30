@@ -51,6 +51,9 @@ ticked; the git log has the history.
   [`units.md`](units.md) (store venue values, never normalise; exact
   `from_units`/`to_units` for `i128`/`u128`, for implied-decimal wire
   formats such as CME order entry and for base units), then implement.
+  Its questions include a fused `mul_div` (one rounding) for day-count and
+  accrued-interest formulas, and whether FX rates are `Price` rather than
+  `Percentage` in `decimix-finance`.
 
 ## Integrations
 
