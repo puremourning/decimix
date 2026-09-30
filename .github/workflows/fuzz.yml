@@ -25,7 +25,12 @@ jobs:
         target: [parse, arith, f64]
     steps:
       - uses: actions/checkout@v4
-      - uses: taiki-e/install-action@cargo-fuzz
+      # cargo-fuzz isn't one of install-action's built-in tools (so the
+      # `@cargo-fuzz` tag form silently installs nothing); with `tool:` it
+      # falls back to cargo-binstall.
+      - uses: taiki-e/install-action@v2
+        with:
+          tool: cargo-fuzz
       # rust-toolchain.toml pins nightly, which cargo-fuzz needs.
       - name: Fuzz ${{ matrix.target }}
         working-directory: fuzz
