@@ -129,6 +129,9 @@ agrees otherwise:
 
 Cargo workspace. Crates live under `crates/<name>`: `crates/decimix` is the
 published crate, `crates/decimix-finance` the domain types (not published).
+`crates/capnp-decimix` is the Cap'n Proto encoding (not yet published), and
+`crates/capnp-decimix-tests` holds its tests: it compiles a test schema the
+way a user's crate would, through `import_path()` and `SCHEMA_ID`.
 Shared package metadata (version, edition, rust-version, license, authors,
 repository) is in `[workspace.package]` in the root `Cargo.toml` and
 inherited with `x.workspace = true`. Shared dependency versions go in

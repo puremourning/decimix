@@ -1,0 +1,31 @@
+[package]
+name = "capnp-decimix"
+description = "Cap'n Proto serialization for decimix"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+authors.workspace = true
+repository.workspace = true
+
+# Not published until the API settles.
+publish = false
+
+[dependencies]
+decimix.workspace = true
+capnp = {
+  git = "https://github.com/puremourning/capnproto-rust",
+  branch = "newtype"
+}
+
+[dev-dependencies]
+# The crate docs' example uses its schema. A dev-dependency cycle is allowed:
+# doc tests link the same `capnp_decimix` that it does.
+capnp-decimix-tests = { path = "../capnp-decimix-tests" }
+
+[build-dependencies]
+capnpc = {
+  git = "https://github.com/puremourning/capnproto-rust",
+  branch = "newtype"
+}
+

@@ -32,8 +32,8 @@ ticked; the git log has the history.
 
 ## Design decisions (parked)
 
-- [ ] **Cap'n Proto encoding** of the 128-bit value: `lo`/`hi` words or a
-  fixed-width byte array. Same question as for UUIDs; decide together.
+- [ ] **Cap'n Proto encoding** of the 128-bit value: `capnp-decimix` uses
+  `lo`/`hi` words in a `type` group (inline, typed). UUIDs should match.
 - [ ] **Priced / unpriced**: a price is in effect `Option<Price>`. Choose
   the representation (a reserved "no price" value vs `Option`).
 - [ ] **Price units**: still to decide.
@@ -59,6 +59,9 @@ ticked; the git log has the history.
 
 - [ ] Cap'n Proto newtype support (via the `newtype!` feature hook,
   `__newtype_features!`).
+- [ ] Publish `capnp-decimix` once the capnproto-rust `newtype` branch is
+  released (crates.io rejects git dependencies). CI needs the `capnp` tool
+  (`.github/actions/setup`).
 - [ ] Selecta support.
 - [ ] serde (a feature; values as strings by default, floats only by
   explicit opt-in).

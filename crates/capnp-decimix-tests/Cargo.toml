@@ -1,0 +1,34 @@
+[package]
+name = "capnp-decimix-tests"
+description = "Tests for capnp-decimix, built the way a user's crate is"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+authors.workspace = true
+repository.workspace = true
+
+# Test-only: compiles its own schema against `capnp-decimix` through
+# `import_path` and `SCHEMA_ID`, as a downstream crate would.
+publish = false
+
+[dependencies]
+decimix.workspace = true
+capnp-decimix = { path = "../capnp-decimix" }
+capnp = {
+  git = "https://github.com/puremourning/capnproto-rust",
+  branch = "newtype"
+}
+
+[dev-dependencies]
+# For the shared generators and oracle helpers in decimix's tests/common.
+num-bigint.workspace = true
+num-integer.workspace = true
+proptest.workspace = true
+
+[build-dependencies]
+capnp-decimix = { path = "../capnp-decimix" }
+capnpc = {
+  git = "https://github.com/puremourning/capnproto-rust",
+  branch = "newtype"
+}

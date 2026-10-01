@@ -28,6 +28,10 @@ solely on incompatible or API changes. For the full changelog see the git log.
   `div_euclid`, `rem_euclid` and their `checked_` forms.
 - `ProductSum` for exact sums of products (`add`, `checked_add`, `finish`,
   `div`); `newtype!` for domain types.
+- `capnp-decimix` (not yet published): Cap'n Proto encoding as two `UInt64`
+  words, with `get_dec19`/`set_dec19` and `get_udec19`/`set_udec19` on field
+  readers and builders, and `import_path()`/`SCHEMA_ID` for a `build.rs` to
+  import `decimix.capnp`. Needs the capnproto-rust `newtype` branch.
 - `decimix-finance` crate (unpublished): `Price`, `Qty` (unsigned quantity),
   `DeltaQty` (signed quantity), `Amt` (price × quantity), `Percentage`, and
   the `Quantity` trait over both quantity forms.
