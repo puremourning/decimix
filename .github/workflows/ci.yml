@@ -31,6 +31,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
+      # The capnp crates need the capnp compiler.
+      - uses: ./.github/actions/setup
       # rust-toolchain.toml selects the toolchain; rustup installs it.
       - run: cargo clippy --workspace --all-targets -- -Dwarnings
       - run: cargo test --workspace

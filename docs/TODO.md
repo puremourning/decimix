@@ -60,8 +60,8 @@ ticked; the git log has the history.
 - [ ] Cap'n Proto newtype support (via the `newtype!` feature hook,
   `__newtype_features!`).
 - [ ] Publish `capnp-decimix` once the capnproto-rust `newtype` branch is
-  released (crates.io rejects git dependencies). CI needs the `capnp` tool
-  (`.github/actions/setup`).
+  released (crates.io rejects git dependencies), and CI's setup hook to a
+  released Cap'n Proto once the compiler side is upstream.
 - [ ] Selecta support.
 - [ ] serde (a feature; values as strings by default, floats only by
   explicit opt-in).

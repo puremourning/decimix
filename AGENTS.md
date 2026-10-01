@@ -169,7 +169,9 @@ job: `no-features` (the default build) and `float-lint`. The separate
 
 System dependencies (e.g. Cap'n Proto, apt packages) go in a local composite
 action at `.github/actions/setup/action.yml`, which every shared job runs after
-installing the toolchain if the file exists:
+installing the toolchain if the file exists. Here it builds `capnp` from the
+`newtype-v2` branch of the Cap'n Proto fork, which the capnp crates' schemas
+need; a release would look like:
 
 ```yaml
 name: Setup
