@@ -1,0 +1,14 @@
+# Project setup hook: every rust-ci job runs this after installing the
+# toolchain (see AGENTS.md). Jobs defined in ci.yml call it explicitly.
+name: Setup
+description: Project setup hook
+
+runs:
+  using: composite
+  steps:
+    # The capnp crates' schemas use `type` newtypes, which need this fork of
+    # the Cap'n Proto compiler. Rebuilt (and re-cached) when the branch moves.
+    - uses: puremourning/rust-ci/setup-capnproto@v1
+      with:
+        repository: https://github.com/puremourning/capnproto
+        ref: newtype-v2

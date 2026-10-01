@@ -5,9 +5,8 @@ ticked; the git log has the history.
 
 ## Now / next
 
-- [ ] **Compact decimal columns**: review the proposal in
-  [`compact-columns.md`](compact-columns.md), settle its open questions,
-  then implement.
+- [ ] **Compact decimal vectors** (`DecVec`/`UDecVec`): second review round
+  of [`compact-columns.md`](compact-columns.md), then implement.
 - [ ] **Check CI** on the `dec19-core` branch: all-features matrix, the
   `no-features` and `float-lint` jobs, Miri timing, and the first
   coverage-guided fuzz runs (`Fuzz` workflow, runs on `main` or on demand).
@@ -33,8 +32,8 @@ ticked; the git log has the history.
 
 ## Design decisions (parked)
 
-- [ ] **Cap'n Proto encoding** of the 128-bit value: `lo`/`hi` words or a
-  fixed-width byte array. Same question as for UUIDs; decide together.
+- [ ] **Cap'n Proto encoding** of the 128-bit value: `capnp-decimix` uses
+  `lo`/`hi` words in a `type` group (inline, typed). UUIDs should match.
 - [ ] **Priced / unpriced**: a price is in effect `Option<Price>`. Choose
   the representation (a reserved "no price" value vs `Option`).
 - [ ] **Price units**: still to decide.
@@ -48,14 +47,21 @@ ticked; the git log has the history.
 - [ ] Wide analytics accumulator: `ProductSum` already sums products and
   squares exactly (`acc.add(x, x)`), but can't combine totals, e.g.
   n·Σx² − (Σx)² for a variance. Low priority.
-- [ ] Wider quantity support for very large base-unit amounts (e.g. wei):
-  these must be scaled at ingest today (`from_scaled`); `Dec19` holds about
-  ±1.7 × 10¹⁹ whole units.
+- [ ] **Units and base-unit amounts** (e.g. wei): review the proposal in
+  [`units.md`](units.md) (store venue values, never normalise; exact
+  `from_units`/`to_units` for `i128`/`u128`, for implied-decimal wire
+  formats such as CME order entry and for base units), then implement.
+  Its questions include a fused `mul_div` (one rounding) for day-count and
+  accrued-interest formulas, and whether FX rates are `Price` rather than
+  `Percentage` in `decimix-finance`.
 
 ## Integrations
 
 - [ ] Cap'n Proto newtype support (via the `newtype!` feature hook,
   `__newtype_features!`).
+- [ ] Publish `capnp-decimix` once the capnproto-rust `newtype` branch is
+  released (crates.io rejects git dependencies), and CI's setup hook to a
+  released Cap'n Proto once the compiler side is upstream.
 - [ ] Selecta support.
 - [ ] serde (a feature; values as strings by default, floats only by
   explicit opt-in).

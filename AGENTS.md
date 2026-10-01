@@ -129,6 +129,9 @@ agrees otherwise:
 
 Cargo workspace. Crates live under `crates/<name>`: `crates/decimix` is the
 published crate, `crates/decimix-finance` the domain types (not published).
+`crates/capnp-decimix` is the Cap'n Proto encoding (not yet published), and
+`crates/capnp-decimix-tests` holds its tests: it compiles a test schema the
+way a user's crate would, through `import_path()` and `SCHEMA_ID`.
 Shared package metadata (version, edition, rust-version, license, authors,
 repository) is in `[workspace.package]` in the root `Cargo.toml` and
 inherited with `x.workspace = true`. Shared dependency versions go in
@@ -166,7 +169,9 @@ job: `no-features` (the default build) and `float-lint`. The separate
 
 System dependencies (e.g. Cap'n Proto, apt packages) go in a local composite
 action at `.github/actions/setup/action.yml`, which every shared job runs after
-installing the toolchain if the file exists:
+installing the toolchain if the file exists. Here it builds `capnp` from the
+`newtype-v2` branch of the Cap'n Proto fork, which the capnp crates' schemas
+need; a release would look like:
 
 ```yaml
 name: Setup

@@ -2,6 +2,8 @@
 resolver = "3"
 members = [
   "crates/decimix",
+  "crates/capnp-decimix",
+  "crates/capnp-decimix-tests",
   "crates/decimix-finance",
 ]
 
