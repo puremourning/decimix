@@ -75,7 +75,7 @@ checksum = "3ded4057c258ba199e2d26386d3af3780957ecaee6c4ef4041c6b4b8b97c0b06"
 [[package]]
 name = "capnp"
 version = "0.27.2"
-source = "git+https://github.com/puremourning/capnproto-rust?branch=newtype#e1f9e32fbf6146a30cb677e1655351bf1c5fb0b3"
+source = "git+https://github.com/puremourning/capnproto-rust?branch=newtype#8f7b2a2a8b3f66c6d1b8b8cc28c78d9540ef291b"
 dependencies = [
  "embedded-io",
 ]
@@ -106,7 +106,7 @@ dependencies = [
 [[package]]
 name = "capnpc"
 version = "0.27.0"
-source = "git+https://github.com/puremourning/capnproto-rust?branch=newtype#e1f9e32fbf6146a30cb677e1655351bf1c5fb0b3"
+source = "git+https://github.com/puremourning/capnproto-rust?branch=newtype#8f7b2a2a8b3f66c6d1b8b8cc28c78d9540ef291b"
 dependencies = [
  "capnp",
 ]
@@ -375,9 +375,9 @@ checksum = "8f42a60cbdf9a97f5d2305f08a87dc4e09308d1276d28c869c684d7777685682"
 
 [[package]]
 name = "libc"
-version = "0.2.189"
+version = "0.2.190"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "3eaf3ede3fee6db1a4c2ee091bf8a8b4dccdc6d17f656fb07896ee72867612f2"
+checksum = "ce5d3ddc6d3fa000eb1536d85e147bfe31aacaba692ed6a876f95cb7c855be78"
 
 [[package]]
 name = "libm"
