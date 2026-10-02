@@ -4,8 +4,6 @@ description = "Price, quantity and notional types built on decimix"
 documentation = "https://docs.rs/decimix-finance"
 keywords = ["decimal", "fixed-point", "finance", "trading"]
 categories = ["mathematics", "finance"]
-# Not published until the API settles.
-publish = false
 
 version.workspace = true
 authors.workspace = true
