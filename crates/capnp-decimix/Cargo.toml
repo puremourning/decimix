@@ -8,15 +8,9 @@ license.workspace = true
 authors.workspace = true
 repository.workspace = true
 
-# Not published until the API settles.
-publish = false
-
 [dependencies]
 decimix.workspace = true
-capnp = {
-  git = "https://github.com/puremourning/capnproto-rust",
-  branch = "newtype"
-}
+capnp.workspace = true
 
 [dev-dependencies]
 # The crate docs' example uses its schema. A dev-dependency cycle is allowed:
@@ -24,8 +18,4 @@ capnp = {
 capnp-decimix-tests = { path = "../capnp-decimix-tests" }
 
 [build-dependencies]
-capnpc = {
-  git = "https://github.com/puremourning/capnproto-rust",
-  branch = "newtype"
-}
-
+capnpc.workspace = true

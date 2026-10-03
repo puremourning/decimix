@@ -15,10 +15,7 @@ publish = false
 [dependencies]
 decimix.workspace = true
 capnp-decimix = { path = "../capnp-decimix" }
-capnp = {
-  git = "https://github.com/puremourning/capnproto-rust",
-  branch = "newtype"
-}
+capnp.workspace = true
 
 [dev-dependencies]
 # For the shared generators and oracle helpers in decimix's tests/common.
@@ -28,7 +25,4 @@ proptest.workspace = true
 
 [build-dependencies]
 capnp-decimix = { path = "../capnp-decimix" }
-capnpc = {
-  git = "https://github.com/puremourning/capnproto-rust",
-  branch = "newtype"
-}
+capnpc.workspace = true
