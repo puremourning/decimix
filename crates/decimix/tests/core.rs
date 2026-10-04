@@ -217,6 +217,14 @@ fn rounding_examples() {
   assert_eq!(dec!(35).round_to(dec!(10), Round::HalfEven), dec!(40));
   assert_eq!(dec!(2.675).round_dp(2, Round::HalfEven), dec!(2.68));
   assert_eq!(dec!(2.665).round_dp(2, Round::HalfEven), dec!(2.66));
+  assert_eq!(dec!(-2.5).floor(), dec!(-3));
+  assert_eq!(dec!(-2.5).ceil(), dec!(-2));
+  assert_eq!(dec!(-2).floor(), dec!(-2));
+  assert_eq!(dec!(0.0000000000000000001).ceil(), dec!(1));
+  assert!(catch_unwind(|| Dec19::MIN.floor()).is_err());
+  assert!(catch_unwind(|| Dec19::MAX.ceil()).is_err());
+  assert_eq!(udec!(2.5).floor(), udec!(2));
+  assert!(catch_unwind(|| UDec19::MAX.ceil()).is_err());
   assert_eq!(dec!(-2.5).to_int(Round::HalfEven), -2);
   assert_eq!(dec!(-2.5).to_int(Round::Floor), -3);
   assert_eq!(
@@ -318,6 +326,18 @@ proptest! {
       let int = round_div(&r, &pow10(19), mode);
       prop_assert_eq!(BigInt::from(x.to_int(mode)), int, "{:?}", mode);
     }
+  }
+
+  #[test]
+  fn floor_and_ceil_match_oracle(raw in value()) {
+    let x = Dec19::from_raw(raw);
+    // Straight from the floored remainder, not through round_div: floor
+    // drops what's above the whole number below; ceil is minus the floor
+    // of minus the value.
+    let floor = |v: &BigInt| v - v.mod_floor(&BigInt::from(D));
+    let r = BigInt::from(raw);
+    prop_assert_eq!(catch_unwind(|| x.floor()).ok(), dec_fits(&floor(&r)));
+    prop_assert_eq!(catch_unwind(|| x.ceil()).ok(), dec_fits(&-floor(&-&r)));
   }
 
   #[test]

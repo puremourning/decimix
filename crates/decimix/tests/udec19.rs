@@ -113,6 +113,16 @@ proptest! {
   }
 
   #[test]
+  fn floor_and_ceil_match_oracle(raw in uvalue()) {
+    let x = UDec19::from_raw(raw);
+    let (whole, part) = ubig(raw).div_mod_floor(&ubig(D as u128));
+    let up = if part == BigInt::ZERO { whole.clone() } else { &whole + 1 };
+    let unit = ubig(D as u128);
+    prop_assert_eq!(x.floor(), udec_fits(&(whole * &unit)).unwrap());
+    prop_assert_eq!(catch_unwind(|| x.ceil()).ok(), udec_fits(&(up * &unit)));
+  }
+
+  #[test]
   fn scaled_integers_match_oracle(raw in uvalue(), places in 0u32..=45, n in any::<u64>()) {
     let x = UDec19::from_raw(raw);
     for mode in MODES {

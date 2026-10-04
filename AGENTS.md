@@ -45,8 +45,9 @@ agrees otherwise:
   `rem_euclid`, `to_le_bytes`, `checked_*`); `to_` returns an owned value,
   `as_` borrows. Prefer plain English over jargon for public names
   (`SMALLEST_STEP`, `DECIMAL_PLACES`), with the jargon as `#[doc(alias)]`.
-  Don't reuse a word that means something else in this API (e.g. "floor" is
-  a `Round` mode).
+  Where std, `f64` or C has a familiar name for an operation (`floor`,
+  `ceil`), provide it, even as a thin wrapper over a more general method
+  (`round_dp(0, Round::Floor)`): it's the first name people type.
 - **Domain types** (`decimix-finance`) follow the FIX 5 datatype names
   (`Price`, `Qty`, `Amt`, `Percentage`), plus `DeltaQty` for signed
   quantities. Products are defined per kind of value (the `Quantity` trait),

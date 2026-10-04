@@ -29,6 +29,8 @@ solely on incompatible or API changes. For the full changelog see the git log.
 - `%` and `%=` (remainder with the sign of the left-hand side, as on Rust's
   integers and `f64`) and `checked_rem`, on both types and on `newtype!`
   types.
+- `floor` and `ceil` (whole numbers, as on `f64`), on both types and on
+  `newtype!` types.
 - `Dec19::unsigned_abs` and `Dec19::abs_diff`, both returning `UDec19` and
   never overflowing.
 - `ProductSum` for exact sums of products (`add`, `checked_add`, `finish`,

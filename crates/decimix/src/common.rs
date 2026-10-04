@@ -491,6 +491,42 @@ macro_rules! impl_fixed19 {
           .expect(concat!(stringify!($T), " overflow in round_dp"))
       }
 
+      /// The largest whole number not above `self`, as `f64::floor`.
+      ///
+      /// The same as `round_dp(0, Round::Floor)`: −2.5 gives −3, not −2.
+      ///
+      #[doc = concat!("```\nuse decimix::", $mac, ";\n")]
+      #[doc = concat!("assert_eq!(", $mac, "!(2.5).floor(), ", $mac, "!(2));")]
+      #[doc = "```"]
+      ///
+      /// # Panics
+      ///
+      /// If the result overflows (only possible within one of
+      /// [`MIN`](Self::MIN)).
+      #[track_caller]
+      #[inline]
+      pub fn floor(self) -> Self {
+        self.round_dp(0, $crate::Round::Floor)
+      }
+
+      /// The smallest whole number not below `self`, as `f64::ceil`.
+      ///
+      /// The same as `round_dp(0, Round::Ceiling)`: −2.5 gives −2.
+      ///
+      #[doc = concat!("```\nuse decimix::", $mac, ";\n")]
+      #[doc = concat!("assert_eq!(", $mac, "!(2.5).ceil(), ", $mac, "!(3));")]
+      #[doc = "```"]
+      ///
+      /// # Panics
+      ///
+      /// If the result overflows (only possible within one of
+      /// [`MAX`](Self::MAX)).
+      #[track_caller]
+      #[inline]
+      pub fn ceil(self) -> Self {
+        self.round_dp(0, $crate::Round::Ceiling)
+      }
+
       /// The whole-number value, rounded with `mode`.
       ///
       /// `2.5.to_int(Round::HalfEven)` is 2; `2.5.to_int(Round::Ceiling)`

@@ -104,7 +104,8 @@ macro_rules! udec {
 /// - same-type `+`, `-` (and unary `-` for `Dec19`), `%`, `+=`, `-=`, `%=`,
 ///   `Sum`, and `*` by an integer (`i64`, or `u64` for `UDec19`), with
 ///   `checked_*` and `saturating_*` versions;
-/// - `round_to`, `round_dp`, `div_euclid`, `rem_euclid`, `div_int`, and
+/// - `round_to`, `round_dp`, `floor`, `ceil`, `div_euclid`, `rem_euclid`,
+///   `div_int`, and
 ///   `mul_dec` (multiply by a plain base-type value, e.g. a ratio);
 /// - `Display`, `Debug` (`FeeRate(0.0002)`), `FromStr`, `from_ascii`,
 ///   `write_ascii` and `to_ascii`;
@@ -269,6 +270,22 @@ macro_rules! __newtype_common {
       #[track_caller]
       pub fn round_dp(self, places: u32, mode: $crate::Round) -> Self {
         Self(self.0.round_dp(places, mode))
+      }
+
+      /// The largest whole number not above `self`. See the base type's
+      /// `floor`.
+      #[inline]
+      #[track_caller]
+      pub fn floor(self) -> Self {
+        Self(self.0.floor())
+      }
+
+      /// The smallest whole number not below `self`. See the base type's
+      /// `ceil`.
+      #[inline]
+      #[track_caller]
+      pub fn ceil(self) -> Self {
+        Self(self.0.ceil())
       }
 
       /// How many whole `rhs` fit in `self` (Euclidean division). Exact.
