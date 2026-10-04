@@ -241,6 +241,25 @@ fn rounding_examples() {
   assert_eq!(Dec19::MIN.checked_div_euclid(minus_one_step), None);
   assert_eq!(Dec19::MIN.checked_rem_euclid(minus_one_step), None);
   assert!(catch_unwind(|| Dec19::MIN.div_euclid(minus_one_step)).is_err());
+  // `%` keeps the sign of the left-hand side, as on integers and f64.
+  assert_eq!(dec!(1.47) % dec!(0.05), dec!(0.02));
+  assert_eq!(dec!(-1.47) % dec!(0.05), dec!(-0.02));
+  assert_eq!(dec!(1.47) % dec!(-0.05), dec!(0.02));
+  assert_eq!(dec!(-1.47) % dec!(-0.05), dec!(-0.02));
+  assert_eq!(dec!(-1.5) % dec!(0.05), Dec19::ZERO);
+  assert_eq!(Dec19::MIN % Dec19::MIN, Dec19::ZERO);
+  assert_eq!(Dec19::MIN.checked_rem(minus_one_step), None);
+  assert_eq!(dec!(1).checked_rem(Dec19::ZERO), None);
+  assert!(catch_unwind(|| Dec19::MIN % minus_one_step).is_err());
+  assert!(catch_unwind(|| dec!(1) % Dec19::ZERO).is_err());
+  let mut r = dec!(-7);
+  r %= dec!(2);
+  assert_eq!(r, dec!(-1));
+  assert_eq!(dec!(-1.5).unsigned_abs(), udec!(1.5));
+  assert_eq!(Dec19::MIN.unsigned_abs().to_raw(), 1 << 127);
+  assert_eq!(dec!(-1.5).abs_diff(dec!(2)), udec!(3.5));
+  assert_eq!(Dec19::MIN.abs_diff(Dec19::MAX), UDec19::MAX);
+  assert_eq!(Dec19::MAX.abs_diff(Dec19::MIN), UDec19::MAX);
   assert_eq!(dec!(1).checked_div_euclid(Dec19::ZERO), None);
   assert_eq!(dec!(1).checked_div_int(0, Round::HalfEven), None);
   assert!(

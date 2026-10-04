@@ -26,6 +26,11 @@ solely on incompatible or API changes. For the full changelog see the git log.
   and `saturating_` forms); `Dec19` accepts a `UDec19` operand.
 - Exact Euclidean division for lot counts and grids, named as in std:
   `div_euclid`, `rem_euclid` and their `checked_` forms.
+- `%` and `%=` (remainder with the sign of the left-hand side, as on Rust's
+  integers and `f64`) and `checked_rem`, on both types and on `newtype!`
+  types.
+- `Dec19::unsigned_abs` and `Dec19::abs_diff`, both returning `UDec19` and
+  never overflowing.
 - `ProductSum` for exact sums of products (`add`, `checked_add`, `finish`,
   `div`); `newtype!` for domain types.
 - `capnp-decimix` (not yet published): Cap'n Proto encoding as two `UInt64`

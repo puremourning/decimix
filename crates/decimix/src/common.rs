@@ -392,6 +392,36 @@ macro_rules! impl_fixed19 {
         }
       }
 
+      /// `self % rhs`, or `None` if `rhs` is zero or the division
+      /// overflows.
+      ///
+      /// `%` works like it does on Rust's integers and on `f64`: the count
+      /// of whole `rhs` is rounded toward zero, so the remainder has the
+      /// sign of `self` (or is zero). It's always exact, and smaller in size
+      /// than `rhs`.
+      ///
+      /// For a negative `self` that's usually not what a grid wants: −1.47
+      /// with a tick of 0.05 leaves −0.02 (−29 ticks, rounded toward zero),
+      /// where [`rem_euclid`](Self::rem_euclid) gives 0.03 (−30 ticks, the
+      /// tick below). The two agree whenever `self` isn't negative.
+      ///
+      #[doc = concat!("```\nuse decimix::", $mac, ";\n")]
+      #[doc = concat!("assert_eq!(", $mac, "!(1.47) % ", $mac, "!(0.05), ", $mac, "!(0.02));")]
+      #[doc = concat!("assert_eq!(", $mac, "!(1.47).checked_rem(", $mac, "!(0)), None);")]
+      #[doc = "```"]
+      ///
+      /// `%` panics where this returns `None`: for a zero `rhs`, and (as
+      /// with `i128`) for [`MIN`](Self::MIN) divided by minus the smallest
+      /// step.
+      #[must_use]
+      #[inline]
+      pub const fn checked_rem(self, rhs: Self) -> Option<Self> {
+        match self.0.checked_rem(rhs.0) {
+          Some(v) => Some(Self(v)),
+          None => None,
+        }
+      }
+
       // ---- Rounding --------------------------------------------------------
 
       /// Rounds to a multiple of `step` (a tick or lot size), using `mode`.
@@ -707,6 +737,35 @@ macro_rules! impl_fixed19 {
       #[track_caller]
       fn sub_assign(&mut self, rhs: Self) {
         *self = *self - rhs;
+      }
+    }
+
+    /// The remainder, with the sign of `self`, as on Rust's integers.
+    /// Exact. See [`checked_rem`](Self::checked_rem), and
+    /// [`rem_euclid`](Self::rem_euclid) for snapping to a grid.
+    ///
+    /// # Panics
+    ///
+    /// If `rhs` is zero, or for `MIN` divided by minus the smallest step.
+    impl ::core::ops::Rem for $T {
+      type Output = Self;
+
+      #[inline]
+      #[track_caller]
+      fn rem(self, rhs: Self) -> Self {
+        // Both values count steps of 10⁻¹⁹, so the remainder of the counts
+        // is the remainder of the values, in the same steps: 1.47 % 0.05 is
+        // 147…0 % 5…0 = 2…0 steps, 0.02. It's smaller in size than `rhs`,
+        // so it always fits. The panics are std's integer `%`'s.
+        Self(self.0 % rhs.0)
+      }
+    }
+
+    impl ::core::ops::RemAssign for $T {
+      #[inline]
+      #[track_caller]
+      fn rem_assign(&mut self, rhs: Self) {
+        *self = *self % rhs;
       }
     }
 

@@ -91,7 +91,10 @@ proptest! {
     let (x, y) = (UDec19::from_raw(a), UDec19::from_raw(b));
     let (q, r) = ubig(a).div_mod_floor(&ubig(b));
     prop_assert_eq!(ubig(x.div_euclid(y)), q);
-    prop_assert_eq!(ubig(x.rem_euclid(y).to_raw()), r);
+    prop_assert_eq!(ubig(x.rem_euclid(y).to_raw()), r.clone());
+    // Nothing is negative, so `%` is the same remainder.
+    prop_assert_eq!(ubig((x % y).to_raw()), r.clone());
+    prop_assert_eq!(x.checked_rem(y).map(|v| ubig(v.to_raw())), Some(r));
   }
 
   #[test]

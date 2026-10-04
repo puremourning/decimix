@@ -14,7 +14,8 @@ use crate::{Fixed19, OutOfRange, Round, UDec19};
 /// `==`, `<` and hashing are plain integer operations.
 ///
 /// Operators exist only where the result is exact: `+`, `-`, unary `-`,
-/// comparisons and `*` by an integer. They panic on overflow, in release
+/// comparisons, `*` by an integer and `%` (the remainder, with the sign of
+/// the left-hand side, as on Rust's integers). They panic on overflow, in release
 /// builds too; the `checked_*` and `saturating_*` methods don't. Anything that
 /// can round is a method taking a [`Round`]:
 ///
@@ -134,6 +135,38 @@ impl Dec19 {
   #[inline]
   pub const fn saturating_abs(self) -> Self {
     Self(self.0.saturating_abs())
+  }
+
+  /// The absolute value as a [`UDec19`]. Never overflows: `UDec19` goes
+  /// about twice as high as `Dec19`, so even [`MIN`](Self::MIN)'s absolute
+  /// value fits.
+  ///
+  /// ```
+  /// use decimix::{Dec19, dec, udec};
+  ///
+  /// assert_eq!(dec!(-1.5).unsigned_abs(), udec!(1.5));
+  /// assert_eq!(Dec19::MIN.unsigned_abs().to_raw(), 1 << 127);
+  /// ```
+  #[inline]
+  pub const fn unsigned_abs(self) -> UDec19 {
+    UDec19::from_raw(self.0.unsigned_abs())
+  }
+
+  /// The distance between two values, whichever is larger, as a
+  /// [`UDec19`]. Never overflows: the widest gap, from
+  /// [`MIN`](Self::MIN) to [`MAX`](Self::MAX), is 2¹²⁸ − 1 steps, which is
+  /// exactly `UDec19::MAX`. (`(a - b).abs()` can overflow for far-apart
+  /// values.)
+  ///
+  /// ```
+  /// use decimix::{Dec19, dec, udec};
+  ///
+  /// assert_eq!(dec!(-1.5).abs_diff(dec!(2)), udec!(3.5));
+  /// assert_eq!(Dec19::MIN.abs_diff(Dec19::MAX).to_raw(), u128::MAX);
+  /// ```
+  #[inline]
+  pub const fn abs_diff(self, other: Self) -> UDec19 {
+    UDec19::from_raw(self.0.abs_diff(other.0))
   }
 
   /// Negation, or `None` for [`MIN`](Self::MIN).

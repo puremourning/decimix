@@ -24,7 +24,7 @@ The crate should be hard to misuse. Keep to these unless the maintainer
 agrees otherwise:
 
 - **Operators only for exact operations:** `+`, `-`, unary `-`, comparisons,
-  and `*` by an integer. Anything that can round (decimal × decimal, every
+  `*` by an integer, and `%` (the remainder, as on Rust's integers). Anything that can round (decimal × decimal, every
   division, rounding to steps or places) is a method taking a mandatory
   `Round`. No default rounding mode and no hidden context.
 - **Overflow:** operators panic, in release builds too. Provide `checked_*`

@@ -65,7 +65,10 @@
 //! [`Dec19::div_euclid`] (how many whole lots or ticks fit) and
 //! [`Dec19::rem_euclid`] (what's left over, never negative). With a positive
 //! lot or tick size they count down for negative values too, unlike Rust's
-//! `/` on integers, which rounds toward zero.
+//! `/` on integers, which rounds toward zero. The `%` operator is the other
+//! remainder, matching Rust's integers and `f64`: it has the sign of the
+//! value being divided, so −1.47 % 0.05 is −0.02 where `rem_euclid` gives
+//! 0.03.
 //!
 //! To add up many products (notional, a VWAP numerator), use [`ProductSum`]:
 //! it keeps every product exactly and rounds once at the end.
@@ -133,7 +136,7 @@
 //! ```
 //!
 //! Multiplying two decimals can round, so there is no `*` between them, and
-//! no `/` or `%` at all (use `mul`, `div`, `div_euclid`, `rem_euclid`):
+//! no `/` at all (use `mul`, `div` or `div_euclid`):
 //!
 //! ```compile_fail
 //! let (a, b) = (decimix::dec!(1.5), decimix::dec!(2));
@@ -145,11 +148,6 @@
 //! let x = a / b;
 //! ```
 //!
-//! ```compile_fail
-//! let (a, b) = (decimix::dec!(1.5), decimix::dec!(2));
-//! let x = a % b;
-//! ```
-//!
 //! Unsigned values can't be negated:
 //!
 //! ```compile_fail
@@ -157,7 +155,8 @@
 //! ```
 //!
 //! (Multiplying by an integer is exact, so that *is* an operator:
-//! `dec!(1.5) * 2`.)
+//! `dec!(1.5) * 2`. So is the remainder, `%`, which works as on Rust's
+//! integers: `dec!(-1.47) % dec!(0.05)` is −0.02.)
 #![no_std]
 #![warn(missing_docs)]
 // One `unsafe` block, in `AsciiBuf::as_str`, allowed there explicitly; any

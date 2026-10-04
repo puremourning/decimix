@@ -311,8 +311,7 @@ impl Qty {
 impl DeltaQty {
   /// The size of the quantity, whichever its sign. Always fits.
   pub fn unsigned_abs(self) -> Qty {
-    let raw = self.get().to_raw().unsigned_abs();
-    Qty::new(UDec19::from_raw(raw))
+    Qty::new(self.get().unsigned_abs())
   }
 }
 

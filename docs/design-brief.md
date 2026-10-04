@@ -86,7 +86,9 @@ multiply path, `dec19.rs`, accompanies this brief.
   workspace-wide.)
 - Literals via `dec!("113.725")`, parsed by a `const fn` so a bad literal is a compile
   error. `FromStr`/`Display` are exact and locale-free.
-- **Operators only for exact operations:** `+ - neg`, comparisons, × integer.
+- **Operators only for exact operations:** `+ - neg`, comparisons, × integer, and
+  `%` (truncated remainder, as on Rust integers; exact, since it's smaller than the
+  divisor).
   Anything that rounds (decimal × decimal, all division) is a method with a
   **mandatory rounding argument**, e.g. `px.mul(qty, Round::HalfEven)`.
 - Overflow: operators panic (also in release); `checked_*` return `Option`. At 1.7×10¹⁹
