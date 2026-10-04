@@ -223,6 +223,12 @@ fn rounding_examples() {
   assert_eq!(dec!(0.0000000000000000001).ceil(), dec!(1));
   assert!(catch_unwind(|| Dec19::MIN.floor()).is_err());
   assert!(catch_unwind(|| Dec19::MAX.ceil()).is_err());
+  assert_eq!(dec!(-2.5).trunc(), dec!(-2));
+  assert_eq!(dec!(-2.5).fract(), dec!(-0.5));
+  assert_eq!(dec!(-2).fract(), Dec19::ZERO);
+  assert_eq!(Dec19::MIN.trunc() + Dec19::MIN.fract(), Dec19::MIN);
+  assert_eq!(Dec19::MAX.trunc() + Dec19::MAX.fract(), Dec19::MAX);
+  assert_eq!(udec!(2.5).fract(), udec!(0.5));
   assert_eq!(udec!(2.5).floor(), udec!(2));
   assert!(catch_unwind(|| UDec19::MAX.ceil()).is_err());
   assert_eq!(dec!(-2.5).to_int(Round::HalfEven), -2);
@@ -329,7 +335,7 @@ proptest! {
   }
 
   #[test]
-  fn floor_and_ceil_match_oracle(raw in value()) {
+  fn floor_ceil_trunc_fract_match_oracle(raw in value()) {
     let x = Dec19::from_raw(raw);
     // Straight from the floored remainder, not through round_div: floor
     // drops what's above the whole number below; ceil is minus the floor
@@ -338,6 +344,10 @@ proptest! {
     let r = BigInt::from(raw);
     prop_assert_eq!(catch_unwind(|| x.floor()).ok(), dec_fits(&floor(&r)));
     prop_assert_eq!(catch_unwind(|| x.ceil()).ok(), dec_fits(&-floor(&-&r)));
+    // Truncating is flooring the size and putting the sign back.
+    let trunc = if raw < 0 { -floor(&-&r) } else { floor(&r) };
+    prop_assert_eq!(x.trunc(), dec_fits(&trunc).unwrap());
+    prop_assert_eq!(x.fract(), dec_fits(&(&r - &trunc)).unwrap());
   }
 
   #[test]

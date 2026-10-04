@@ -104,8 +104,8 @@ macro_rules! udec {
 /// - same-type `+`, `-` (and unary `-` for `Dec19`), `%`, `+=`, `-=`, `%=`,
 ///   `Sum`, and `*` by an integer (`i64`, or `u64` for `UDec19`), with
 ///   `checked_*` and `saturating_*` versions;
-/// - `round_to`, `round_dp`, `floor`, `ceil`, `div_euclid`, `rem_euclid`,
-///   `div_int`, and
+/// - `round_to`, `round_dp`, `floor`, `ceil`, `trunc`, `fract`,
+///   `div_euclid`, `rem_euclid`, `div_int`, and
 ///   `mul_dec` (multiply by a plain base-type value, e.g. a ratio);
 /// - `Display`, `Debug` (`FeeRate(0.0002)`), `FromStr`, `from_ascii`,
 ///   `write_ascii` and `to_ascii`;
@@ -286,6 +286,20 @@ macro_rules! __newtype_common {
       #[track_caller]
       pub fn ceil(self) -> Self {
         Self(self.0.ceil())
+      }
+
+      /// The whole-number part, dropping the fraction. See the base type's
+      /// `trunc`.
+      #[inline]
+      pub const fn trunc(self) -> Self {
+        Self(self.0.trunc())
+      }
+
+      /// The part after the decimal point, with the sign of `self`. See the
+      /// base type's `fract`.
+      #[inline]
+      pub const fn fract(self) -> Self {
+        Self(self.0.fract())
       }
 
       /// How many whole `rhs` fit in `self` (Euclidean division). Exact.

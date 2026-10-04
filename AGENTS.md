@@ -46,7 +46,7 @@ agrees otherwise:
   `as_` borrows. Prefer plain English over jargon for public names
   (`SMALLEST_STEP`, `DECIMAL_PLACES`), with the jargon as `#[doc(alias)]`.
   Where std, `f64` or C has a familiar name for an operation (`floor`,
-  `ceil`), provide it, even as a thin wrapper over a more general method
+  `ceil`, `trunc`, `fract`), provide it, even as a thin wrapper over a more general method
   (`round_dp(0, Round::Floor)`): it's the first name people type.
 - **Domain types** (`decimix-finance`) follow the FIX 5 datatype names
   (`Price`, `Qty`, `Amt`, `Percentage`), plus `DeltaQty` for signed

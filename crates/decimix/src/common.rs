@@ -527,6 +527,39 @@ macro_rules! impl_fixed19 {
         self.round_dp(0, $crate::Round::Ceiling)
       }
 
+      /// The whole-number part, dropping the fraction, as `f64::trunc`.
+      ///
+      /// The same as `round_dp(0, Round::TowardZero)`: −2.5 gives −2.
+      /// Never overflows, since the result is never further from zero than
+      /// `self`.
+      ///
+      #[doc = concat!("```\nuse decimix::", $mac, ";\n")]
+      #[doc = concat!("assert_eq!(", $mac, "!(2.5).trunc(), ", $mac, "!(2));")]
+      #[doc = "```"]
+      #[inline]
+      pub const fn trunc(self) -> Self {
+        Self(self.0 - self.fract().0)
+      }
+
+      /// The part after the decimal point, as `f64::fract`: always
+      /// `self == self.trunc() + self.fract()`.
+      ///
+      /// It has the sign of `self`, so −2.5 gives −0.5. Exact, and never
+      /// overflows.
+      ///
+      #[doc = concat!("```\nuse decimix::", $mac, ";\n")]
+      #[doc = concat!("assert_eq!(", $mac, "!(2.5).fract(), ", $mac, "!(0.5));")]
+      #[doc = "```"]
+      #[inline]
+      pub const fn fract(self) -> Self {
+        // 1 is stored as 10¹⁹ steps, so the remainder of the stored count
+        // by 10¹⁹ is the steps past the whole number: 2.5 is 25×10¹⁸ steps,
+        // and 25×10¹⁸ % 10¹⁹ = 5×10¹⁸, 0.5. Rust's `%` keeps the sign of
+        // the left-hand side, which is the sign f64's `fract` has. The
+        // divisor is positive, so this can't hit `MIN % -1`.
+        Self(self.0 % ($crate::consts::ONE_RAW as $raw))
+      }
+
       /// The whole-number value, rounded with `mode`.
       ///
       /// `2.5.to_int(Round::HalfEven)` is 2; `2.5.to_int(Round::Ceiling)`
