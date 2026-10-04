@@ -8,6 +8,8 @@ license.workspace = true
 authors.workspace = true
 repository.workspace = true
 
+include = [ "/src", "/decimix.capnp"]
+
 [dependencies]
 decimix.workspace = true
 capnp.workspace = true
