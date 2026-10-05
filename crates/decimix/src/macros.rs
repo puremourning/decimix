@@ -101,10 +101,11 @@ macro_rules! udec {
 /// type is `#[repr(transparent)]` with a private field, and gets:
 /// - `new`/`get` (both `const`), `ZERO`, and `From<Type> for Dec19`;
 /// - `Copy`, `Eq`, `Ord`, `Hash`, `Default`;
-/// - same-type `+`, `-` (and unary `-` for `Dec19`), `+=`, `-=`, `Sum`, and
-///   `*` by an integer (`i64`, or `u64` for `UDec19`), with `checked_*` and
-///   `saturating_*` versions;
-/// - `round_to`, `round_dp`, `div_euclid`, `rem_euclid`, `div_int`, and
+/// - same-type `+`, `-` (and unary `-` for `Dec19`), `%`, `+=`, `-=`, `%=`,
+///   `Sum`, and `*` by an integer (`i64`, or `u64` for `UDec19`), with
+///   `checked_*` and `saturating_*` versions;
+/// - `round_to`, `round_dp`, `floor`, `ceil`, `trunc`, `fract`,
+///   `div_euclid`, `rem_euclid`, `div_int`, and
 ///   `mul_dec` (multiply by a plain base-type value, e.g. a ratio);
 /// - `Display`, `Debug` (`FeeRate(0.0002)`), `FromStr`, `from_ascii`,
 ///   `write_ascii` and `to_ascii`;
@@ -271,6 +272,36 @@ macro_rules! __newtype_common {
         Self(self.0.round_dp(places, mode))
       }
 
+      /// The largest whole number not above `self`. See the base type's
+      /// `floor`.
+      #[inline]
+      #[track_caller]
+      pub fn floor(self) -> Self {
+        Self(self.0.floor())
+      }
+
+      /// The smallest whole number not below `self`. See the base type's
+      /// `ceil`.
+      #[inline]
+      #[track_caller]
+      pub fn ceil(self) -> Self {
+        Self(self.0.ceil())
+      }
+
+      /// The whole-number part, dropping the fraction. See the base type's
+      /// `trunc`.
+      #[inline]
+      pub const fn trunc(self) -> Self {
+        Self(self.0.trunc())
+      }
+
+      /// The part after the decimal point, with the sign of `self`. See the
+      /// base type's `fract`.
+      #[inline]
+      pub const fn fract(self) -> Self {
+        Self(self.0.fract())
+      }
+
       /// How many whole `rhs` fit in `self` (Euclidean division). Exact.
       /// See the base type's `div_euclid`.
       #[must_use]
@@ -286,6 +317,20 @@ macro_rules! __newtype_common {
       #[track_caller]
       pub const fn rem_euclid(self, rhs: Self) -> Self {
         Self(self.0.rem_euclid(rhs.0))
+      }
+
+      /// `self % rhs`, or `None` if `rhs` is zero or the division
+      /// overflows. See the base type's `checked_rem`.
+      #[must_use]
+      #[inline]
+      pub const fn checked_rem(
+        self,
+        rhs: Self,
+      ) -> ::core::option::Option<Self> {
+        match self.0.checked_rem(rhs.0) {
+          ::core::option::Option::Some(v) => ::core::option::Option::Some(Self(v)),
+          ::core::option::Option::None => ::core::option::Option::None,
+        }
       }
 
       /// Division by an integer, rounded with `mode`.
@@ -428,6 +473,24 @@ macro_rules! __newtype_common {
       #[track_caller]
       fn sub_assign(&mut self, rhs: Self) {
         self.0 -= rhs.0;
+      }
+    }
+
+    impl ::core::ops::Rem for $name {
+      type Output = Self;
+
+      #[inline]
+      #[track_caller]
+      fn rem(self, rhs: Self) -> Self {
+        Self(self.0 % rhs.0)
+      }
+    }
+
+    impl ::core::ops::RemAssign for $name {
+      #[inline]
+      #[track_caller]
+      fn rem_assign(&mut self, rhs: Self) {
+        self.0 %= rhs.0;
       }
     }
 

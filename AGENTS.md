@@ -24,7 +24,7 @@ The crate should be hard to misuse. Keep to these unless the maintainer
 agrees otherwise:
 
 - **Operators only for exact operations:** `+`, `-`, unary `-`, comparisons,
-  and `*` by an integer. Anything that can round (decimal × decimal, every
+  `*` by an integer, and `%` (the remainder, as on Rust's integers). Anything that can round (decimal × decimal, every
   division, rounding to steps or places) is a method taking a mandatory
   `Round`. No default rounding mode and no hidden context.
 - **Overflow:** operators panic, in release builds too. Provide `checked_*`
@@ -45,8 +45,9 @@ agrees otherwise:
   `rem_euclid`, `to_le_bytes`, `checked_*`); `to_` returns an owned value,
   `as_` borrows. Prefer plain English over jargon for public names
   (`SMALLEST_STEP`, `DECIMAL_PLACES`), with the jargon as `#[doc(alias)]`.
-  Don't reuse a word that means something else in this API (e.g. "floor" is
-  a `Round` mode).
+  Where std, `f64` or C has a familiar name for an operation (`floor`,
+  `ceil`, `trunc`, `fract`), provide it, even as a thin wrapper over a more general method
+  (`round_dp(0, Round::Floor)`): it's the first name people type.
 - **Domain types** (`decimix-finance`) follow the FIX 5 datatype names
   (`Price`, `Qty`, `Amt`, `Percentage`), plus `DeltaQty` for signed
   quantities. Products are defined per kind of value (the `Quantity` trait),

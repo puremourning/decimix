@@ -217,6 +217,20 @@ fn rounding_examples() {
   assert_eq!(dec!(35).round_to(dec!(10), Round::HalfEven), dec!(40));
   assert_eq!(dec!(2.675).round_dp(2, Round::HalfEven), dec!(2.68));
   assert_eq!(dec!(2.665).round_dp(2, Round::HalfEven), dec!(2.66));
+  assert_eq!(dec!(-2.5).floor(), dec!(-3));
+  assert_eq!(dec!(-2.5).ceil(), dec!(-2));
+  assert_eq!(dec!(-2).floor(), dec!(-2));
+  assert_eq!(dec!(0.0000000000000000001).ceil(), dec!(1));
+  assert!(catch_unwind(|| Dec19::MIN.floor()).is_err());
+  assert!(catch_unwind(|| Dec19::MAX.ceil()).is_err());
+  assert_eq!(dec!(-2.5).trunc(), dec!(-2));
+  assert_eq!(dec!(-2.5).fract(), dec!(-0.5));
+  assert_eq!(dec!(-2).fract(), Dec19::ZERO);
+  assert_eq!(Dec19::MIN.trunc() + Dec19::MIN.fract(), Dec19::MIN);
+  assert_eq!(Dec19::MAX.trunc() + Dec19::MAX.fract(), Dec19::MAX);
+  assert_eq!(udec!(2.5).fract(), udec!(0.5));
+  assert_eq!(udec!(2.5).floor(), udec!(2));
+  assert!(catch_unwind(|| UDec19::MAX.ceil()).is_err());
   assert_eq!(dec!(-2.5).to_int(Round::HalfEven), -2);
   assert_eq!(dec!(-2.5).to_int(Round::Floor), -3);
   assert_eq!(
@@ -241,6 +255,25 @@ fn rounding_examples() {
   assert_eq!(Dec19::MIN.checked_div_euclid(minus_one_step), None);
   assert_eq!(Dec19::MIN.checked_rem_euclid(minus_one_step), None);
   assert!(catch_unwind(|| Dec19::MIN.div_euclid(minus_one_step)).is_err());
+  // `%` keeps the sign of the left-hand side, as on integers and f64.
+  assert_eq!(dec!(1.47) % dec!(0.05), dec!(0.02));
+  assert_eq!(dec!(-1.47) % dec!(0.05), dec!(-0.02));
+  assert_eq!(dec!(1.47) % dec!(-0.05), dec!(0.02));
+  assert_eq!(dec!(-1.47) % dec!(-0.05), dec!(-0.02));
+  assert_eq!(dec!(-1.5) % dec!(0.05), Dec19::ZERO);
+  assert_eq!(Dec19::MIN % Dec19::MIN, Dec19::ZERO);
+  assert_eq!(Dec19::MIN.checked_rem(minus_one_step), None);
+  assert_eq!(dec!(1).checked_rem(Dec19::ZERO), None);
+  assert!(catch_unwind(|| Dec19::MIN % minus_one_step).is_err());
+  assert!(catch_unwind(|| dec!(1) % Dec19::ZERO).is_err());
+  let mut r = dec!(-7);
+  r %= dec!(2);
+  assert_eq!(r, dec!(-1));
+  assert_eq!(dec!(-1.5).unsigned_abs(), udec!(1.5));
+  assert_eq!(Dec19::MIN.unsigned_abs().to_raw(), 1 << 127);
+  assert_eq!(dec!(-1.5).abs_diff(dec!(2)), udec!(3.5));
+  assert_eq!(Dec19::MIN.abs_diff(Dec19::MAX), UDec19::MAX);
+  assert_eq!(Dec19::MAX.abs_diff(Dec19::MIN), UDec19::MAX);
   assert_eq!(dec!(1).checked_div_euclid(Dec19::ZERO), None);
   assert_eq!(dec!(1).checked_div_int(0, Round::HalfEven), None);
   assert!(
@@ -299,6 +332,22 @@ proptest! {
       let int = round_div(&r, &pow10(19), mode);
       prop_assert_eq!(BigInt::from(x.to_int(mode)), int, "{:?}", mode);
     }
+  }
+
+  #[test]
+  fn floor_ceil_trunc_fract_match_oracle(raw in value()) {
+    let x = Dec19::from_raw(raw);
+    // Straight from the floored remainder, not through round_div: floor
+    // drops what's above the whole number below; ceil is minus the floor
+    // of minus the value.
+    let floor = |v: &BigInt| v - v.mod_floor(&BigInt::from(D));
+    let r = BigInt::from(raw);
+    prop_assert_eq!(catch_unwind(|| x.floor()).ok(), dec_fits(&floor(&r)));
+    prop_assert_eq!(catch_unwind(|| x.ceil()).ok(), dec_fits(&-floor(&-&r)));
+    // Truncating is flooring the size and putting the sign back.
+    let trunc = if raw < 0 { -floor(&-&r) } else { floor(&r) };
+    prop_assert_eq!(x.trunc(), dec_fits(&trunc).unwrap());
+    prop_assert_eq!(x.fract(), dec_fits(&(&r - &trunc)).unwrap());
   }
 
   #[test]

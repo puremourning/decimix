@@ -392,6 +392,36 @@ macro_rules! impl_fixed19 {
         }
       }
 
+      /// `self % rhs`, or `None` if `rhs` is zero or the division
+      /// overflows.
+      ///
+      /// `%` works like it does on Rust's integers and on `f64`: the count
+      /// of whole `rhs` is rounded toward zero, so the remainder has the
+      /// sign of `self` (or is zero). It's always exact, and smaller in size
+      /// than `rhs`.
+      ///
+      /// For a negative `self` that's usually not what a grid wants: −1.47
+      /// with a tick of 0.05 leaves −0.02 (−29 ticks, rounded toward zero),
+      /// where [`rem_euclid`](Self::rem_euclid) gives 0.03 (−30 ticks, the
+      /// tick below). The two agree whenever `self` isn't negative.
+      ///
+      #[doc = concat!("```\nuse decimix::", $mac, ";\n")]
+      #[doc = concat!("assert_eq!(", $mac, "!(1.47) % ", $mac, "!(0.05), ", $mac, "!(0.02));")]
+      #[doc = concat!("assert_eq!(", $mac, "!(1.47).checked_rem(", $mac, "!(0)), None);")]
+      #[doc = "```"]
+      ///
+      /// `%` panics where this returns `None`: for a zero `rhs`, and (as
+      /// with `i128`) for [`MIN`](Self::MIN) divided by minus the smallest
+      /// step.
+      #[must_use]
+      #[inline]
+      pub const fn checked_rem(self, rhs: Self) -> Option<Self> {
+        match self.0.checked_rem(rhs.0) {
+          Some(v) => Some(Self(v)),
+          None => None,
+        }
+      }
+
       // ---- Rounding --------------------------------------------------------
 
       /// Rounds to a multiple of `step` (a tick or lot size), using `mode`.
@@ -459,6 +489,75 @@ macro_rules! impl_fixed19 {
         rounded
           .and_then(|m| Self::from_parts(negative, m))
           .expect(concat!(stringify!($T), " overflow in round_dp"))
+      }
+
+      /// The largest whole number not above `self`, as `f64::floor`.
+      ///
+      /// The same as `round_dp(0, Round::Floor)`: −2.5 gives −3, not −2.
+      ///
+      #[doc = concat!("```\nuse decimix::", $mac, ";\n")]
+      #[doc = concat!("assert_eq!(", $mac, "!(2.5).floor(), ", $mac, "!(2));")]
+      #[doc = "```"]
+      ///
+      /// # Panics
+      ///
+      /// If the result overflows (only possible within one of
+      /// [`MIN`](Self::MIN)).
+      #[track_caller]
+      #[inline]
+      pub fn floor(self) -> Self {
+        self.round_dp(0, $crate::Round::Floor)
+      }
+
+      /// The smallest whole number not below `self`, as `f64::ceil`.
+      ///
+      /// The same as `round_dp(0, Round::Ceiling)`: −2.5 gives −2.
+      ///
+      #[doc = concat!("```\nuse decimix::", $mac, ";\n")]
+      #[doc = concat!("assert_eq!(", $mac, "!(2.5).ceil(), ", $mac, "!(3));")]
+      #[doc = "```"]
+      ///
+      /// # Panics
+      ///
+      /// If the result overflows (only possible within one of
+      /// [`MAX`](Self::MAX)).
+      #[track_caller]
+      #[inline]
+      pub fn ceil(self) -> Self {
+        self.round_dp(0, $crate::Round::Ceiling)
+      }
+
+      /// The whole-number part, dropping the fraction, as `f64::trunc`.
+      ///
+      /// The same as `round_dp(0, Round::TowardZero)`: −2.5 gives −2.
+      /// Never overflows, since the result is never further from zero than
+      /// `self`.
+      ///
+      #[doc = concat!("```\nuse decimix::", $mac, ";\n")]
+      #[doc = concat!("assert_eq!(", $mac, "!(2.5).trunc(), ", $mac, "!(2));")]
+      #[doc = "```"]
+      #[inline]
+      pub const fn trunc(self) -> Self {
+        Self(self.0 - self.fract().0)
+      }
+
+      /// The part after the decimal point, as `f64::fract`: always
+      /// `self == self.trunc() + self.fract()`.
+      ///
+      /// It has the sign of `self`, so −2.5 gives −0.5. Exact, and never
+      /// overflows.
+      ///
+      #[doc = concat!("```\nuse decimix::", $mac, ";\n")]
+      #[doc = concat!("assert_eq!(", $mac, "!(2.5).fract(), ", $mac, "!(0.5));")]
+      #[doc = "```"]
+      #[inline]
+      pub const fn fract(self) -> Self {
+        // 1 is stored as 10¹⁹ steps, so the remainder of the stored count
+        // by 10¹⁹ is the steps past the whole number: 2.5 is 25×10¹⁸ steps,
+        // and 25×10¹⁸ % 10¹⁹ = 5×10¹⁸, 0.5. Rust's `%` keeps the sign of
+        // the left-hand side, which is the sign f64's `fract` has. The
+        // divisor is positive, so this can't hit `MIN % -1`.
+        Self(self.0 % ($crate::consts::ONE_RAW as $raw))
       }
 
       /// The whole-number value, rounded with `mode`.
@@ -707,6 +806,35 @@ macro_rules! impl_fixed19 {
       #[track_caller]
       fn sub_assign(&mut self, rhs: Self) {
         *self = *self - rhs;
+      }
+    }
+
+    /// The remainder, with the sign of `self`, as on Rust's integers.
+    /// Exact. See [`checked_rem`](Self::checked_rem), and
+    /// [`rem_euclid`](Self::rem_euclid) for snapping to a grid.
+    ///
+    /// # Panics
+    ///
+    /// If `rhs` is zero, or for `MIN` divided by minus the smallest step.
+    impl ::core::ops::Rem for $T {
+      type Output = Self;
+
+      #[inline]
+      #[track_caller]
+      fn rem(self, rhs: Self) -> Self {
+        // Both values count steps of 10⁻¹⁹, so the remainder of the counts
+        // is the remainder of the values, in the same steps: 1.47 % 0.05 is
+        // 147…0 % 5…0 = 2…0 steps, 0.02. It's smaller in size than `rhs`,
+        // so it always fits. The panics are std's integer `%`'s.
+        Self(self.0 % rhs.0)
+      }
+    }
+
+    impl ::core::ops::RemAssign for $T {
+      #[inline]
+      #[track_caller]
+      fn rem_assign(&mut self, rhs: Self) {
+        *self = *self % rhs;
       }
     }
 

@@ -8,6 +8,7 @@ use std::panic::catch_unwind;
 use common::{D, MODES, config, round_div, uvalue, value};
 use decimix::{Dec19, OutOfRange, ProductSum, Round, UDec19, dec, udec};
 use num_bigint::BigInt;
+use num_integer::Integer;
 use proptest::prelude::*;
 
 fn big(v: i128) -> BigInt {
@@ -108,6 +109,56 @@ proptest! {
         .flatten();
       prop_assert_eq!(x.checked_div(y, mode), expected, "{:?}", mode);
     }
+  }
+
+  #[test]
+  fn remainders_match_oracle(a in value(), b in value()) {
+    let (x, y) = (Dec19::from_raw(a), Dec19::from_raw(b));
+    if b == 0 {
+      prop_assert_eq!(x.checked_rem(y), None);
+      prop_assert_eq!(x.checked_rem_euclid(y), None);
+      prop_assert!(catch_unwind(|| x % y).is_err());
+      return Ok(());
+    }
+    // Both remainders from one floored division, rather than from Rust's
+    // or BigInt's own `%`: a = q·b + r with r between 0 and b (sign of b).
+    let (q, r) = big(a).div_mod_floor(&big(b));
+    // Euclidean: never negative. If r is negative (b was), step one more
+    // b towards zero: −7 = 3·(−2) + −1, or 4·(−2) + 1.
+    let (eq, er) = if r.sign() == num_bigint::Sign::Minus {
+      (&q + 1, &r - big(b))
+    } else {
+      (q.clone(), r.clone())
+    };
+    // Truncated (`%`): the sign of a. Floored division gives r the sign of
+    // b, so when a and b differ in sign and r isn't zero, take one b back:
+    // −7 = −4·2 + 1 floored, and −3·2 + −1 truncated.
+    let tr = if r != BigInt::ZERO && (a < 0) != (b < 0) { &r - big(b) } else { r };
+    // The one overflow is the quotient MIN / −1 step = 2¹²⁷, which doesn't
+    // fit in i128; Rust panics for both remainders then too.
+    let fits = i128::try_from(&eq).is_ok();
+    prop_assert_eq!(x.checked_div_euclid(y).map(BigInt::from), fits.then_some(eq));
+    prop_assert_eq!(x.checked_rem_euclid(y), fits.then(|| dec_fits(&er).unwrap()));
+    prop_assert_eq!(x.checked_rem(y), fits.then(|| dec_fits(&tr).unwrap()));
+    if fits {
+      prop_assert_eq!(x.rem_euclid(y), dec_fits(&er).unwrap());
+      prop_assert_eq!(x % y, dec_fits(&tr).unwrap());
+      let mut z = x;
+      z %= y;
+      prop_assert_eq!(z, x % y);
+    } else {
+      prop_assert!(catch_unwind(|| x % y).is_err());
+      prop_assert!(catch_unwind(|| x.rem_euclid(y)).is_err());
+    }
+  }
+
+  #[test]
+  fn unsigned_abs_and_abs_diff_match_oracle(a in value(), b in value()) {
+    let (x, y) = (Dec19::from_raw(a), Dec19::from_raw(b));
+    let size = |v: BigInt| udec_fits(&v.magnitude().clone().into()).unwrap();
+    prop_assert_eq!(x.unsigned_abs(), size(big(a)));
+    prop_assert_eq!(x.abs_diff(y), size(big(a) - big(b)));
+    prop_assert_eq!(x.abs_diff(y), y.abs_diff(x));
   }
 
   #[test]
