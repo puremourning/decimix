@@ -280,6 +280,8 @@ fn rounding_examples() {
     catch_unwind(|| dec!(1).round_to(Dec19::ZERO, Round::Floor)).is_err()
   );
   assert!(catch_unwind(|| dec!(1).round_to(dec!(-1), Round::Floor)).is_err());
+  assert_eq!(dec!(1).checked_round_to(Dec19::ZERO, Round::Floor), None);
+  assert_eq!(dec!(1).checked_round_to(dec!(-1), Round::Floor), None);
   assert!(catch_unwind(|| dec!(1).div_int(0, Round::Floor)).is_err());
 }
 
@@ -302,6 +304,12 @@ proptest! {
       let expected = dec_fits(&(round_div(&BigInt::from(raw), &s, mode) * &s));
       let got = catch_unwind(|| x.round_to(Dec19::from_raw(step), mode)).ok();
       prop_assert_eq!(got, expected, "{:?}", mode);
+      prop_assert_eq!(
+        x.checked_round_to(Dec19::from_raw(step), mode),
+        expected,
+        "{:?}",
+        mode
+      );
     }
   }
 
@@ -313,6 +321,12 @@ proptest! {
       let expected = udec_fits(&(round_div(&BigInt::from(raw), &s, mode) * &s));
       let got = catch_unwind(|| x.round_to(UDec19::from_raw(step), mode)).ok();
       prop_assert_eq!(got, expected, "{:?}", mode);
+      prop_assert_eq!(
+        x.checked_round_to(UDec19::from_raw(step), mode),
+        expected,
+        "{:?}",
+        mode
+      );
     }
   }
 
@@ -329,6 +343,7 @@ proptest! {
       };
       let got = catch_unwind(|| x.round_dp(places, mode)).ok();
       prop_assert_eq!(got, expected, "{:?}", mode);
+      prop_assert_eq!(x.checked_round_dp(places, mode), expected, "{:?}", mode);
       let int = round_div(&r, &pow10(19), mode);
       prop_assert_eq!(BigInt::from(x.to_int(mode)), int, "{:?}", mode);
     }
@@ -344,6 +359,8 @@ proptest! {
     let r = BigInt::from(raw);
     prop_assert_eq!(catch_unwind(|| x.floor()).ok(), dec_fits(&floor(&r)));
     prop_assert_eq!(catch_unwind(|| x.ceil()).ok(), dec_fits(&-floor(&-&r)));
+    prop_assert_eq!(x.checked_floor(), dec_fits(&floor(&r)));
+    prop_assert_eq!(x.checked_ceil(), dec_fits(&-floor(&-&r)));
     // Truncating is flooring the size and putting the sign back.
     let trunc = if raw < 0 { -floor(&-&r) } else { floor(&r) };
     prop_assert_eq!(x.trunc(), dec_fits(&trunc).unwrap());

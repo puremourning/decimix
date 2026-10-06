@@ -31,6 +31,12 @@ solely on incompatible or API changes. For the full changelog see the git log.
   types.
 - `floor`, `ceil`, `trunc` and `fract` (as on `f64`), on both types and on
   `newtype!` types.
+- `checked_round_to`, `checked_round_dp`, `checked_floor` and `checked_ceil`
+  (`None` where the unchecked forms panic), on both types and on `newtype!`
+  types.
+- `capnp-decimix`: `dec19::from_words` and `udec19::from_words`, the value
+  held in a field's `lo` and `hi` words, for readers other than the generated
+  ones.
 - `Dec19::unsigned_abs` and `Dec19::abs_diff`, both returning `UDec19` and
   never overflowing.
 - `ProductSum` for exact sums of products (`add`, `checked_add`, `finish`,

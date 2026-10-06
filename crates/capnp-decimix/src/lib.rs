@@ -236,13 +236,18 @@ pub mod dec19 {
   pub fn from_capnp<'msg>(
     reader: &impl crate::decimix_capnp::dec19::Reader<'msg>,
   ) -> decimix::Dec19 {
+    from_words(reader.get_lo(), reader.get_hi())
+  }
+
+  /// The value held in a field's `lo` and `hi` words, for code that reads
+  /// the words some other way than through a generated reader (e.g. through
+  /// `capnp::dynamic_struct`).
+  pub const fn from_words(lo: u64, hi: u64) -> decimix::Dec19 {
     // Put `hi` in the top 64 bits and `lo` in the bottom 64; the casts to
     // u128 add zeros above each word, so neither spills into the other.
     // Casting the u128 to i128 keeps the bits, so a set top bit in `hi`
     // makes the value negative: two's complement, as it was written.
-    decimix::Dec19::from_raw(
-      (reader.get_lo() as u128 | (reader.get_hi() as u128) << 64) as i128,
-    )
+    decimix::Dec19::from_raw((lo as u128 | (hi as u128) << 64) as i128)
   }
 
   /// Writes the value into a field's `lo` and `hi` words.
@@ -267,10 +272,15 @@ pub mod udec19 {
   pub fn from_capnp<'msg>(
     reader: &impl crate::decimix_capnp::u_dec19::Reader<'msg>,
   ) -> decimix::UDec19 {
+    from_words(reader.get_lo(), reader.get_hi())
+  }
+
+  /// The value held in a field's `lo` and `hi` words, for code that reads
+  /// the words some other way than through a generated reader (e.g. through
+  /// `capnp::dynamic_struct`).
+  pub const fn from_words(lo: u64, hi: u64) -> decimix::UDec19 {
     // `hi` in the top 64 bits, `lo` in the bottom 64, as for `Dec19`.
-    decimix::UDec19::from_raw(
-      reader.get_lo() as u128 | (reader.get_hi() as u128) << 64,
-    )
+    decimix::UDec19::from_raw(lo as u128 | (hi as u128) << 64)
   }
 
   /// Writes the value into a field's `lo` and `hi` words.

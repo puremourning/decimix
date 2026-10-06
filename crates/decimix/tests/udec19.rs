@@ -121,7 +121,9 @@ proptest! {
     // Nothing is negative, so truncating is flooring.
     prop_assert_eq!(x.trunc(), udec_fits(&(&whole * &unit)).unwrap());
     prop_assert_eq!(x.fract(), udec_fits(&part).unwrap());
+    prop_assert_eq!(x.checked_floor(), udec_fits(&(&whole * &unit)));
     prop_assert_eq!(x.floor(), udec_fits(&(whole * &unit)).unwrap());
+    prop_assert_eq!(x.checked_ceil(), udec_fits(&(&up * &unit)));
     prop_assert_eq!(catch_unwind(|| x.ceil()).ok(), udec_fits(&(up * &unit)));
   }
 

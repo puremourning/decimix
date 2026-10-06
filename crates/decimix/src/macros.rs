@@ -265,11 +265,40 @@ macro_rules! __newtype_common {
         Self(self.0.round_to(step.0, mode))
       }
 
+      /// [`round_to`](Self::round_to), or `None` if `step` is not positive
+      /// or the result overflows. See the base type's `checked_round_to`.
+      #[must_use]
+      #[inline]
+      pub fn checked_round_to(
+        self,
+        step: Self,
+        mode: $crate::Round,
+      ) -> Option<Self> {
+        match self.0.checked_round_to(step.0, mode) {
+          Some(v) => Some(Self(v)),
+          None => None,
+        }
+      }
+
       /// Rounds to `places` decimal places, using `mode`.
       #[inline]
       #[track_caller]
       pub fn round_dp(self, places: u32, mode: $crate::Round) -> Self {
         Self(self.0.round_dp(places, mode))
+      }
+
+      /// [`round_dp`](Self::round_dp), or `None` if the result overflows.
+      #[must_use]
+      #[inline]
+      pub fn checked_round_dp(
+        self,
+        places: u32,
+        mode: $crate::Round,
+      ) -> Option<Self> {
+        match self.0.checked_round_dp(places, mode) {
+          Some(v) => Some(Self(v)),
+          None => None,
+        }
       }
 
       /// The largest whole number not above `self`. See the base type's
@@ -280,12 +309,26 @@ macro_rules! __newtype_common {
         Self(self.0.floor())
       }
 
+      /// [`floor`](Self::floor), or `None` if the result overflows.
+      #[must_use]
+      #[inline]
+      pub fn checked_floor(self) -> Option<Self> {
+        self.0.checked_floor().map(Self)
+      }
+
       /// The smallest whole number not below `self`. See the base type's
       /// `ceil`.
       #[inline]
       #[track_caller]
       pub fn ceil(self) -> Self {
         Self(self.0.ceil())
+      }
+
+      /// [`ceil`](Self::ceil), or `None` if the result overflows.
+      #[must_use]
+      #[inline]
+      pub fn checked_ceil(self) -> Option<Self> {
+        self.0.checked_ceil().map(Self)
       }
 
       /// The whole-number part, dropping the fraction. See the base type's

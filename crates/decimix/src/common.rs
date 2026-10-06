@@ -442,6 +442,31 @@ macro_rules! impl_fixed19 {
       #[track_caller]
       pub fn round_to(self, step: Self, mode: $crate::Round) -> Self {
         assert!(step.0 > 0, "round_to: step must be positive");
+        self
+          .checked_round_to(step, mode)
+          .expect(concat!(stringify!($T), " overflow in round_to"))
+      }
+
+      /// [`round_to`](Self::round_to), or `None` where that panics: when
+      /// `step` is not positive, or the result overflows (only possible
+      /// within one `step` of [`MAX`](Self::MAX) or [`MIN`](Self::MIN)).
+      ///
+      #[doc = concat!("```\nuse decimix::{", stringify!($T), ", Round, ", $mac, "};\n")]
+      #[doc = concat!("assert_eq!(", $mac, "!(1.234).checked_round_to(", $mac, "!(0.01), Round::Floor), Some(", $mac, "!(1.23)));")]
+      #[doc = concat!("assert_eq!(", $mac, "!(1.234).checked_round_to(", $mac, "!(0), Round::Floor), None);")]
+      #[doc = concat!("assert_eq!(", stringify!($T), "::MAX.checked_round_to(", $mac, "!(1), Round::Ceiling), None);")]
+      #[doc = "```"]
+      #[must_use]
+      pub fn checked_round_to(
+        self,
+        step: Self,
+        mode: $crate::Round,
+      ) -> Option<Self> {
+        // `> 0` rather than `<= 0`: the same test for the signed and the
+        // unsigned type.
+        if !(step.0 > 0) {
+          return None;
+        }
         let (negative, magnitude) = self.to_parts();
         let step = step.0 as u128;
         // The multiple of `step` just below the magnitude is the magnitude
@@ -454,9 +479,7 @@ macro_rules! impl_fixed19 {
         let away =
           $crate::round::round_away(mode, negative, q & 1 == 1, r, step);
         let rounded = if away { below.checked_add(step) } else { Some(below) };
-        rounded
-          .and_then(|m| Self::from_parts(negative, m))
-          .expect(concat!(stringify!($T), " overflow in round_to"))
+        rounded.and_then(|m| Self::from_parts(negative, m))
       }
 
       /// Rounds to `places` decimal places, using `mode`.
@@ -471,8 +494,25 @@ macro_rules! impl_fixed19 {
       #[track_caller]
       #[inline]
       pub fn round_dp(self, places: u32, mode: $crate::Round) -> Self {
+        self
+          .checked_round_dp(places, mode)
+          .expect(concat!(stringify!($T), " overflow in round_dp"))
+      }
+
+      /// [`round_dp`](Self::round_dp), or `None` if the result overflows.
+      ///
+      #[doc = concat!("```\nuse decimix::{", stringify!($T), ", Round, ", $mac, "};\n")]
+      #[doc = concat!("assert_eq!(", $mac, "!(1.235).checked_round_dp(2, Round::HalfEven), Some(", $mac, "!(1.24)));")]
+      #[doc = concat!("assert_eq!(", stringify!($T), "::MAX.checked_round_dp(0, Round::Ceiling), None);")]
+      #[doc = "```"]
+      #[must_use]
+      pub fn checked_round_dp(
+        self,
+        places: u32,
+        mode: $crate::Round,
+      ) -> Option<Self> {
         if places >= 19 {
-          return self;
+          return Some(self);
         }
         let (negative, magnitude) = self.to_parts();
         let k = 19 - places;
@@ -486,9 +526,7 @@ macro_rules! impl_fixed19 {
         } else {
           Some(below)
         };
-        rounded
-          .and_then(|m| Self::from_parts(negative, m))
-          .expect(concat!(stringify!($T), " overflow in round_dp"))
+        rounded.and_then(|m| Self::from_parts(negative, m))
       }
 
       /// The largest whole number not above `self`, as `f64::floor`.
@@ -509,6 +547,13 @@ macro_rules! impl_fixed19 {
         self.round_dp(0, $crate::Round::Floor)
       }
 
+      /// [`floor`](Self::floor), or `None` if the result overflows.
+      #[must_use]
+      #[inline]
+      pub fn checked_floor(self) -> Option<Self> {
+        self.checked_round_dp(0, $crate::Round::Floor)
+      }
+
       /// The smallest whole number not below `self`, as `f64::ceil`.
       ///
       /// The same as `round_dp(0, Round::Ceiling)`: −2.5 gives −2.
@@ -525,6 +570,13 @@ macro_rules! impl_fixed19 {
       #[inline]
       pub fn ceil(self) -> Self {
         self.round_dp(0, $crate::Round::Ceiling)
+      }
+
+      /// [`ceil`](Self::ceil), or `None` if the result overflows.
+      #[must_use]
+      #[inline]
+      pub fn checked_ceil(self) -> Option<Self> {
+        self.checked_round_dp(0, $crate::Round::Ceiling)
       }
 
       /// The whole-number part, dropping the fraction, as `f64::trunc`.
