@@ -18,7 +18,7 @@ plain integer operations, and adding costs the same as for an `i128`.
 
 ```toml
 [dependencies]
-decimix = "0.1.3"
+decimix = "0.1.4"
 ```
 
 ```rust
