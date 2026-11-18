@@ -97,18 +97,18 @@ dependencies = [
 
 [[package]]
 name = "capnp-newtype"
-version = "0.27.2"
+version = "0.28.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "a5de838d91bef5e4c76a15987600f668229d806fdf7614de5eb105f3bd456a1c"
+checksum = "d4306e7db119fe8d5d2388fda16ec3b86f526fa6212d2e2311229e823a241e24"
 dependencies = [
  "embedded-io",
 ]
 
 [[package]]
 name = "capnpc-newtype"
-version = "0.27.0"
+version = "0.28.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "a412e42df28502085319075e9860377f562b6a662b2437044e4bfb93944853dd"
+checksum = "3eaa04cecc663fc218b1795389d095f14d5eb98727a0e6acd1c97f4badb03fb4"
 dependencies = [
  "capnp-newtype",
 ]

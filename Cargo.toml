@@ -19,8 +19,8 @@ repository = "https://github.com/puremourning/decimix"
 decimix = { path = "crates/decimix", version = "0.1.4" }
 bigdecimal = { version = "0.4.11", default-features = false }
 ethnum = "1.5.3"
-capnpc = { package = "capnpc-newtype", version = "0.27" }
-capnp = { package = "capnp-newtype", version = "0.27" }
+capnpc = { package = "capnpc-newtype", version = "0.28" }
+capnp = { package = "capnp-newtype", version = "0.28" }
 
 # Test and bench only.
 itoa = "1"
