@@ -3,7 +3,13 @@
 This file describes notable changes in major and minor releases with a focus
 solely on incompatible or API changes. For the full changelog see the git log.
 
-## [Unreleased]
+## 0.2
+
+# Changed
+
+- Upgraded capnp-decimix to capnproto-rust 0.28
+
+## 0.1
 
 ### Added
 
