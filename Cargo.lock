@@ -111,6 +111,7 @@ name = "capnp-decimix"
 version = "0.1.4"
 dependencies = [
  "capnp-decimix-tests",
+ "capnp-json-newtype",
  "capnp-newtype",
  "capnpc-newtype",
  "decimix",
@@ -121,12 +122,23 @@ name = "capnp-decimix-tests"
 version = "0.1.4"
 dependencies = [
  "capnp-decimix",
+ "capnp-json-newtype",
  "capnp-newtype",
  "capnpc-newtype",
  "decimix",
  "num-bigint",
  "num-integer",
  "proptest",
+]
+
+[[package]]
+name = "capnp-json-newtype"
+version = "0.4.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "f503685fa34ddab1e081afaa81e2e4249455b86e3eeac98a32fdec5435d26064"
+dependencies = [
+ "capnp-newtype",
+ "capnpc-newtype",
 ]
 
 [[package]]
