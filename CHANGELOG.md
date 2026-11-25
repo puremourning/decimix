@@ -9,6 +9,13 @@ solely on incompatible or API changes. For the full changelog see the git log.
 
 - Upgraded capnp-decimix to capnproto-rust 0.28
 
+### Added
+
+- capnp-decimix `json` feature: `json::add_codecs` registers `Dec19Json` and
+  `UDec19Json` on a `capnp-json-newtype` codec, so decimal fields are written
+  and read as exact decimal strings (`"-101.25"`) rather than as their two
+  words. JSON numbers are refused.
+
 ## 0.1
 
 ### Added

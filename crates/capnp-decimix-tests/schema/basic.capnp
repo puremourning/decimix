@@ -21,3 +21,11 @@ struct Order {
 struct OrderV0 {
   id @0 :UInt32;
 }
+
+# A decimal reached through a type of its own, for the JSON codecs, which
+# must still recognise it as a decimal.
+type Price = Decimix.Dec19;
+
+struct Quote {
+  bid @[0-1] :Price;
+}

@@ -21,6 +21,7 @@ bigdecimal = { version = "0.4.11", default-features = false }
 ethnum = "1.5.3"
 capnpc = { package = "capnpc-newtype", version = "0.28" }
 capnp = { package = "capnp-newtype", version = "0.28" }
+capnp-json = { package = "capnp-json-newtype", version = "0.4.1" }
 
 # Test and bench only.
 itoa = "1"

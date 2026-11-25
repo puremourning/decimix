@@ -16,6 +16,16 @@ publish = false
 decimix.workspace = true
 capnp-decimix = { path = "../capnp-decimix" }
 capnp.workspace = true
+capnp-json = { workspace = true, optional = true }
+
+[features]
+# The JSON tests. A feature rather than always on, so that the default
+# build still compiles `capnp-decimix` without its `json` feature.
+json = ["capnp-decimix/json", "dep:capnp-json"]
+
+[[test]]
+name = "json"
+required-features = ["json"]
 
 [dev-dependencies]
 # For the shared generators and oracle helpers in decimix's tests/common.

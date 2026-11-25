@@ -13,11 +13,18 @@ include = [ "/src", "/build.rs", "/decimix.capnp"]
 [dependencies]
 decimix.workspace = true
 capnp.workspace = true
+capnp-json = { workspace = true, optional = true }
+
+[features]
+# `capnp_decimix::json`: decimals as exact decimal strings in Cap'n Proto's
+# JSON form.
+json = ["dep:capnp-json"]
 
 [dev-dependencies]
 # The crate docs' example uses its schema. A dev-dependency cycle is allowed:
 # doc tests link the same `capnp_decimix` that it does.
 capnp-decimix-tests = { path = "../capnp-decimix-tests" }
+capnp-json.workspace = true
 
 [build-dependencies]
 capnpc.workspace = true

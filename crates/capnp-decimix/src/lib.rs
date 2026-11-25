@@ -101,6 +101,12 @@
 //! little-endian 128-bit integer if `lo`'s word comes first, as it does for
 //! consecutive ordinals like `@[1-2]`; don't rely on that, read the fields.
 //!
+//! # JSON
+//!
+//! With the `json` feature, [`json::add_codecs`] makes a
+//! `capnp-json-newtype` codec write each decimal as an exact decimal
+//! string, `"-101.25"`, rather than as its two words.
+//!
 //! # Why two words rather than `Data`
 //!
 //! Cap'n Proto has no 128-bit integer. The alternative is a 16-byte `Data`
@@ -116,6 +122,9 @@
 #![deny(unsafe_code)]
 
 pub use decimix::{Dec19, UDec19};
+
+#[cfg(feature = "json")]
+pub mod json;
 
 /// The directory holding `decimix.capnp`, for a `build.rs` to pass to
 /// `capnpc::CompilerCommand::import_path`. Schemas then import it as
